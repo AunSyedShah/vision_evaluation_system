@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProjectsForEvaluator, getEvaluations } from '../../utils/localStorage';
+import { getAssignedProjects, getMyEvaluations } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -10,20 +10,42 @@ const EvaluatorDashboard = () => {
     completedEvaluations: 0,
     pendingEvaluations: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentUser) {
-      const projects = getProjectsForEvaluator(currentUser.id);
-      const evaluations = getEvaluations();
-      const myEvaluations = evaluations.filter(e => e.evaluatorId === currentUser.id);
-      
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+
+      // Load assigned projects
+      const projectsData = await getAssignedProjects();
+      const projectsArray = projectsData.$values || projectsData;
+      const assignedCount = Array.isArray(projectsArray) ? projectsArray.length : 0;
+
+      // Load my evaluations
+      const evaluationsData = await getMyEvaluations();
+      const evaluationsArray = evaluationsData.$values || evaluationsData;
+      const completedCount = Array.isArray(evaluationsArray) ? evaluationsArray.length : 0;
+
       setStats({
-        assignedProjects: projects.length,
-        completedEvaluations: myEvaluations.length,
-        pendingEvaluations: projects.length - myEvaluations.length
+        assignedProjects: assignedCount,
+        completedEvaluations: completedCount,
+        pendingEvaluations: Math.max(0, assignedCount - completedCount)
       });
+    } catch (error) {
+      console.error('❌ Failed to load dashboard stats:', error);
+      setStats({
+        assignedProjects: 0,
+        completedEvaluations: 0,
+        pendingEvaluations: 0
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [currentUser]);
+  };
 
   const StatCard = ({ title, value, icon, color, link }) => (
     <Link to={link} className="block">
@@ -31,13 +53,22 @@ const EvaluatorDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{value}</p>
           </div>
           <div className="text-4xl">{icon}</div>
         </div>
       </div>
     </Link>
   );
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ab509d] mx-auto"></div>
+        <p className="text-gray-600 mt-4">Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -76,7 +107,7 @@ const EvaluatorDashboard = () => {
           <div className="space-y-3">
             <Link
               to="/evaluator/projects"
-              className="block px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition duration-150 font-medium"
+              className="block px-4 py-3 bg-purple-50 hover:bg-purple-100 text-[#ab509d] rounded-lg transition duration-150 font-medium"
             >
               📋 View My Assigned Projects
             </Link>

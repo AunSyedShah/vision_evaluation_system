@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Topbar = () => {
+const Topbar = ({ onMenuToggle }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -13,9 +13,9 @@ const Topbar = () => {
   const getRoleBadgeColor = () => {
     switch (currentUser?.role) {
       case 'superadmin':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-[#ab509d] text-white';
       case 'admin':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-purple-100 text-[#ab509d]';
       case 'evaluator':
         return 'bg-green-100 text-green-800';
       default:
@@ -37,23 +37,50 @@ const Topbar = () => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Project Evaluation System</h2>
+        <div className="flex items-center gap-3">
+          {/* Hamburger menu for mobile */}
+          <button
+            onClick={onMenuToggle}
+            className="lg:hidden text-gray-600 hover:text-gray-900 focus:outline-none"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          
+          <img src="/vision_logo.png" alt="Logo" className="h-6 sm:h-8 w-6 sm:w-8 object-contain" />
+          <h2 className="hidden sm:block text-lg sm:text-xl font-bold text-gray-800">Project Evaluation System</h2>
+          <h2 className="sm:hidden text-lg font-bold text-gray-800">PES</h2>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-gray-900">{currentUser?.name}</p>
             <span className={`inline-block text-xs font-semibold px-2 py-1 rounded ${getRoleBadgeColor()}`}>
               {getRoleLabel()}
             </span>
           </div>
+          
+          {/* Mobile: Show badge only */}
+          <div className="sm:hidden">
+            <span className={`inline-block text-xs font-semibold px-2 py-1 rounded ${getRoleBadgeColor()}`}>
+              {getRoleLabel()}
+            </span>
+          </div>
+          
           <button
             onClick={handleLogout}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition duration-150"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition duration-150"
           >
-            Logout
+            <span className="hidden sm:inline">Logout</span>
+            <span className="sm:hidden">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </span>
           </button>
         </div>
       </div>

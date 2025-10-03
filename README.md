@@ -16,6 +16,7 @@ A comprehensive ReactJS web application for managing project evaluations with th
 - **Download Sample CSV** template for bulk uploads
 - **Assign Evaluators** (up to 2 per project)
 - **View Evaluation Results** from all evaluators
+- **All Results Data Table** - comprehensive view of all evaluations with filters and sorting
 - **Manage Evaluators** - view all registered evaluators
 - Complete dashboard with system statistics
 
@@ -130,12 +131,23 @@ Download the sample CSV from the "Add Project" page. Required columns:
 
 ## 🎨 UI/UX Features
 
-- **Responsive Design** - Works on desktop and mobile
-- **Tailwind CSS Styling** - Modern, clean interface
-- **Tab-Based Navigation** - Project details with tabs
+- **Fully Responsive Design** - Mobile-first approach, works perfectly on all devices
+- **Purple/Magenta Theme** - Beautiful color scheme (#ab509d) with diagonal backgrounds
+- **Tailwind CSS 4** - Modern, utility-first styling
+- **Mobile Menu** - Slide-in sidebar navigation with backdrop
+- **Touch-Optimized** - 44px minimum touch targets for mobile
+- **Tab-Based Navigation** - Project details with scrollable tabs
 - **Status Badges** - Visual indicators for evaluation status
 - **Interactive Forms** - Real-time validation with Formik
 - **Statistics Dashboard** - Overview cards for each role
+- **Responsive Tables** - Horizontal scroll on mobile, full view on desktop
+
+### 📱 Responsive Breakpoints
+- **Mobile:** < 640px (1 column, overlay sidebar)
+- **Tablet:** 640px - 1023px (2 columns, overlay sidebar)
+- **Desktop:** ≥ 1024px (3 columns, fixed sidebar)
+
+See `RESPONSIVE_DESIGN.md` for complete documentation.
 
 ## 🔄 Future Enhancements (Backend Integration)
 

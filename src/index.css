@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+/* Custom responsive utilities */
+@layer base {
+  * {
+    @apply antialiased;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply text-gray-900;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Better touch targets for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Prevent text selection on buttons */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Safe area for mobile devices */
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Mobile-first responsive table */
+@media (max-width: 640px) {
+  .responsive-table thead {
+    @apply hidden;
+  }
+  
+  .responsive-table tbody tr {
+    @apply block mb-4 border border-gray-200 rounded-lg;
+  }
+  
+  .responsive-table td {
+    @apply block text-right py-2 px-4;
+  }
+  
+  .responsive-table td::before {
+    content: attr(data-label);
+    @apply float-left font-semibold;
+  }
+}

@@ -14,6 +14,7 @@ import SuperAdminProjectList from './pages/SuperAdmin/ProjectList';
 import SuperAdminProjectForm from './pages/SuperAdmin/ProjectForm';
 import SuperAdminProjectDetail from './pages/SuperAdmin/ProjectDetail';
 import SuperAdminEvaluatorsList from './pages/SuperAdmin/EvaluatorsList';
+import SuperAdminAllResults from './pages/SuperAdmin/AllResults';
 
 // Admin pages
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -24,6 +25,7 @@ import AdminProjectDetail from './pages/Admin/ProjectDetail';
 import EvaluatorDashboard from './pages/Evaluator/Dashboard';
 import EvaluatorProjectList from './pages/Evaluator/ProjectList';
 import EvaluatorProjectDetail from './pages/Evaluator/ProjectDetail';
+import EvaluatorMyEvaluations from './pages/Evaluator/MyEvaluations';
 
 function App() {
   return (
@@ -47,6 +49,7 @@ function App() {
             <Route path="projects/edit/:id" element={<SuperAdminProjectForm />} />
             <Route path="projects/:id" element={<SuperAdminProjectDetail />} />
             <Route path="evaluators" element={<SuperAdminEvaluatorsList />} />
+            <Route path="results" element={<SuperAdminAllResults />} />
           </Route>
 
           {/* Admin routes */}
@@ -70,6 +73,7 @@ function App() {
             <Route path="dashboard" element={<EvaluatorDashboard />} />
             <Route path="projects" element={<EvaluatorProjectList />} />
             <Route path="projects/:id" element={<EvaluatorProjectDetail />} />
+            <Route path="my-evaluations" element={<EvaluatorMyEvaluations />} />
           </Route>
 
           {/* Default redirect */}

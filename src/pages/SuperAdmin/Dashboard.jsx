@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getProjects, getEvaluators, getEvaluations } from '../../utils/localStorage';
 import { Link } from 'react-router-dom';
+import { getAllProjects, getAllEvaluators, getEvaluationsByProject } from '../../utils/api';
 
 const SuperAdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -9,27 +9,66 @@ const SuperAdminDashboard = () => {
     totalEvaluations: 0,
     pendingEvaluations: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const projects = getProjects();
-    const evaluators = getEvaluators();
-    const evaluations = getEvaluations();
-    
-    // Calculate pending evaluations (assigned but not submitted)
-    let pending = 0;
-    projects.forEach(project => {
-      const assignedCount = project.assignedEvaluators?.length || 0;
-      const submittedCount = evaluations.filter(e => e.projectId === project.id).length;
-      pending += assignedCount - submittedCount;
-    });
-
-    setStats({
-      totalProjects: projects.length,
-      totalEvaluators: evaluators.length,
-      totalEvaluations: evaluations.length,
-      pendingEvaluations: pending
-    });
+    loadStats();
   }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch data from backend
+      let projects = await getAllProjects();
+      let evaluators = await getAllEvaluators();
+      
+      // Handle .NET ReferenceHandler.Preserve format
+      if (projects && projects.$values) projects = projects.$values;
+      if (evaluators && evaluators.$values) evaluators = evaluators.$values;
+      
+      // Ensure arrays
+      projects = Array.isArray(projects) ? projects : [];
+      evaluators = Array.isArray(evaluators) ? evaluators : [];
+      
+      // Fetch evaluations for each project
+      let totalEvaluations = 0;
+      for (const project of projects) {
+        try {
+          const evaluations = await getEvaluationsByProject(project.id);
+          totalEvaluations += evaluations.length;
+        } catch {
+          // Project may have no evaluations yet
+          console.log(`No evaluations for project ${project.id}`);
+        }
+      }
+      
+      // Note: Pending evaluations would require assignment data from backend
+      // For now, we'll show 0 or remove this stat
+      
+      setStats({
+        totalProjects: projects.length,
+        totalEvaluators: evaluators.length,
+        totalEvaluations: totalEvaluations,
+        pendingEvaluations: 0 // Would need backend endpoint for ProjectAssignments
+      });
+    } catch (err) {
+      console.error('Failed to load dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ab509d] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const StatCard = ({ title, value, icon, color, link }) => (
     <Link to={link} className="block">
@@ -37,7 +76,7 @@ const SuperAdminDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{value}</p>
           </div>
           <div className="text-4xl">{icon}</div>
         </div>
@@ -89,13 +128,13 @@ const SuperAdminDashboard = () => {
           <div className="space-y-3">
             <Link
               to="/superadmin/projects/add"
-              className="block px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition duration-150 font-medium"
+              className="block px-4 py-3 bg-purple-50 hover:bg-purple-100 text-[#ab509d] rounded-lg transition duration-150 font-medium"
             >
               ➕ Add New Project
             </Link>
             <Link
               to="/superadmin/projects"
-              className="block px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition duration-150 font-medium"
+              className="block px-4 py-3 bg-purple-50 hover:bg-purple-100 text-[#ab509d] rounded-lg transition duration-150 font-medium"
             >
               📋 View All Projects
             </Link>
@@ -104,6 +143,12 @@ const SuperAdminDashboard = () => {
               className="block px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition duration-150 font-medium"
             >
               👥 Manage Evaluators
+            </Link>
+            <Link
+              to="/superadmin/results"
+              className="block px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition duration-150 font-medium"
+            >
+              📈 View All Results
             </Link>
           </div>
         </div>

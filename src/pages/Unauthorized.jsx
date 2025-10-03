@@ -22,7 +22,7 @@ const Unauthorized = () => {
         </p>
         <Link
           to={getRedirectPath()}
-          className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-150"
+          className="inline-block px-6 py-3 bg-[#ab509d] hover:bg-[#964a8a] text-white font-semibold rounded-lg shadow-md transition duration-150"
         >
           Go to Dashboard
         </Link>

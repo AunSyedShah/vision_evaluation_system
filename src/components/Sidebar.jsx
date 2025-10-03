@@ -1,14 +1,15 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
 
   const getSuperAdminLinks = () => [
     { to: '/superadmin/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/superadmin/projects', label: 'Projects', icon: '📁' },
     { to: '/superadmin/projects/add', label: 'Add Project', icon: '➕' },
-    { to: '/superadmin/evaluators', label: 'Evaluators', icon: '👥' }
+    { to: '/superadmin/evaluators', label: 'Evaluators', icon: '👥' },
+    { to: '/superadmin/results', label: 'All Results', icon: '📈' }
   ];
 
   const getAdminLinks = () => [
@@ -19,7 +20,8 @@ const Sidebar = () => {
 
   const getEvaluatorLinks = () => [
     { to: '/evaluator/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/evaluator/projects', label: 'My Projects', icon: '📁' }
+    { to: '/evaluator/projects', label: 'My Projects', icon: '📁' },
+    { to: '/evaluator/my-evaluations', label: 'My Evaluations', icon: '📝' }
   ];
 
   const getLinks = () => {
@@ -36,31 +38,62 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white w-64 min-h-screen p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">PES</h1>
-        <p className="text-xs text-gray-400 mt-1">Project Evaluation System</p>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        ></div>
+      )}
       
-      <nav className="space-y-2">
-        {getLinks().map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition duration-150 ${
-                isActive
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`
-            }
-          >
-            <span className="text-xl">{link.icon}</span>
-            <span className="font-medium">{link.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </div>
+      {/* Sidebar */}
+      <div className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        bg-[#ab509d] text-white w-64 min-h-screen p-6
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Close button for mobile */}
+        <button
+          onClick={onClose}
+          className="lg:hidden absolute top-4 right-4 text-white hover:text-gray-200"
+          aria-label="Close menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <img src="/vision_logo.png" alt="Logo" className="h-10 w-10 object-contain" />
+            <h1 className="text-2xl font-bold">PES</h1>
+          </div>
+          <p className="text-xs text-gray-300 mt-1">Project Evaluation System</p>
+        </div>
+        
+        <nav className="space-y-2">
+          {getLinks().map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              onClick={() => onClose && onClose()}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition duration-150 ${
+                  isActive
+                    ? 'bg-white text-[#ab509d] font-semibold'
+                    : 'text-white hover:bg-[#964a8a] hover:text-white'
+                }`
+              }
+            >
+              <span className="text-xl">{link.icon}</span>
+              <span className="font-medium">{link.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 };
 
