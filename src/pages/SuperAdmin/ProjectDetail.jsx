@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { 
   getProjectById,
   getAllEvaluators,
@@ -38,7 +39,28 @@ const ProjectDetail = () => {
       if (allEvaluators && allEvaluators.$values) {
         allEvaluators = allEvaluators.$values;
       }
-      setEvaluators(Array.isArray(allEvaluators) ? allEvaluators : []);
+      
+      // Filter only verified evaluators with role "User"
+      const verifiedEvaluators = Array.isArray(allEvaluators)
+        ? allEvaluators.filter(user => {
+            // Handle Role as object or string
+            let roleName = '';
+            if (typeof user.role === 'object' && user.role !== null) {
+              roleName = user.role.roleName || user.role.RoleName || '';
+            } else if (typeof user.Role === 'object' && user.Role !== null) {
+              roleName = user.Role.roleName || user.Role.RoleName || '';
+            } else {
+              roleName = user.Role || user.role || user.RoleName || user.roleName || '';
+            }
+            
+            const isVerified = user.isOtpVerified || user.IsOtpVerified || false;
+            const isEvaluatorRole = roleName === 'User' || roleName === 'user' || roleName === 'Evaluator' || roleName === 'evaluator';
+            return isEvaluatorRole && isVerified;
+          })
+        : [];
+      
+      console.log('Verified Evaluators:', verifiedEvaluators); // Debug
+      setEvaluators(verifiedEvaluators);
       
       // Fetch evaluations for this project
       let projectEvaluations = await getEvaluationsByProject(parseInt(id));
@@ -66,10 +88,8 @@ const ProjectDetail = () => {
   const handleEvaluatorToggle = (evaluatorId) => {
     if (selectedEvaluators.includes(evaluatorId)) {
       setSelectedEvaluators(selectedEvaluators.filter(id => id !== evaluatorId));
-    } else if (selectedEvaluators.length < 2) {
-      setSelectedEvaluators([...selectedEvaluators, evaluatorId]);
     } else {
-      alert('Maximum 2 evaluators can be assigned per project');
+      setSelectedEvaluators([...selectedEvaluators, evaluatorId]);
     }
   };
 
@@ -79,11 +99,11 @@ const ProjectDetail = () => {
         ProjectId: parseInt(id),
         UserIds: selectedEvaluators
       });
-      alert('Evaluators assigned successfully!');
+      toast.success('Evaluators assigned successfully!');
       loadProjectData();
     } catch (err) {
       console.error('Failed to assign evaluators:', err);
-      alert(err.response?.data?.message || 'Failed to assign evaluators.');
+      toast.error(err.response?.data?.message || 'Failed to assign evaluators.');
     }
   };
 
@@ -347,7 +367,12 @@ const ProjectDetail = () => {
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Assign Evaluators</h3>
-                <p className="text-sm text-gray-600">Select up to 2 evaluators to assign to this project</p>
+                <p className="text-sm text-gray-600">Select evaluators to assign to this project. You can select multiple evaluators.</p>
+                {selectedEvaluators.length > 0 && (
+                  <p className="text-sm text-[#ab509d] font-semibold mt-1">
+                    {selectedEvaluators.length} evaluator{selectedEvaluators.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
 
               {evaluators.length === 0 ? (

@@ -36,15 +36,30 @@ const AllResults = () => {
       const allEvaluations = [];
       for (const project of allProjects) {
         try {
-          const projectEvaluations = await getEvaluationsByProject(project.id);
+          // Use correct field name (Id or id)
+          const projectId = project.Id || project.id;
+          let projectEvaluations = await getEvaluationsByProject(projectId);
+          
+          // Handle .NET ReferenceHandler.Preserve format
+          if (projectEvaluations && projectEvaluations.$values) {
+            projectEvaluations = projectEvaluations.$values;
+          }
+          
+          // Ensure it's an array
+          if (!Array.isArray(projectEvaluations)) {
+            projectEvaluations = [];
+          }
+          
+          console.log(`📊 Project ${projectId} evaluations:`, projectEvaluations);
+          
           // Add project reference to each evaluation
           projectEvaluations.forEach(evaluation => {
             evaluation.projectData = project;
           });
           allEvaluations.push(...projectEvaluations);
-        } catch {
+        } catch (err) {
           // Project may have no evaluations yet
-          console.log(`No evaluations for project ${project.id}`);
+          console.log(`No evaluations for project ${project.Id || project.id}:`, err.message);
         }
       }
       
@@ -59,25 +74,29 @@ const AllResults = () => {
   };
 
   const getEvaluatorName = (evaluatorId) => {
-    const evaluator = evaluators.find(e => e.userId === evaluatorId);
-    return evaluator ? evaluator.username : 'Unknown Evaluator';
+    const evaluator = evaluators.find(e => 
+      (e.userId || e.UserId) === evaluatorId
+    );
+    return evaluator ? (evaluator.username || evaluator.Username || 'Unknown') : 'Unknown Evaluator';
   };
 
   const getEvaluatorEmail = (evaluatorId) => {
-    const evaluator = evaluators.find(e => e.userId === evaluatorId);
-    return evaluator ? evaluator.email : '';
+    const evaluator = evaluators.find(e => 
+      (e.userId || e.UserId) === evaluatorId
+    );
+    return evaluator ? (evaluator.email || evaluator.Email || '') : '';
   };
 
   // Calculate average score from 7 evaluation metrics (1-10 scale)
   const calculateAverageScore = (evaluation) => {
     const scores = [
-      evaluation.problemSignificance || 0,
-      evaluation.innovationTechnical || 0,
-      evaluation.marketScalability || 0,
-      evaluation.tractionImpact || 0,
-      evaluation.businessModel || 0,
-      evaluation.teamExecution || 0,
-      evaluation.ethicsEquity || 0
+      evaluation.ProblemSignificance || evaluation.problemSignificance || 0,
+      evaluation.InnovationTechnical || evaluation.innovationTechnical || 0,
+      evaluation.MarketScalability || evaluation.marketScalability || 0,
+      evaluation.TractionImpact || evaluation.tractionImpact || 0,
+      evaluation.BusinessModel || evaluation.businessModel || 0,
+      evaluation.TeamExecution || evaluation.teamExecution || 0,
+      evaluation.EthicsEquity || evaluation.ethicsEquity || 0
     ];
     const sum = scores.reduce((a, b) => a + b, 0);
     const avg = sum / 7;
@@ -103,15 +122,20 @@ const AllResults = () => {
 
   const filteredAndSortedEvaluations = evaluations
     .filter(evaluation => {
-      const projectTitle = evaluation.projectData?.startupName?.toLowerCase() || '';
-      const evaluatorName = getEvaluatorName(evaluation.userId).toLowerCase();
+      const projectTitle = (evaluation.projectData?.StartupName || evaluation.projectData?.startupName || '').toLowerCase();
+      const userId = evaluation.UserId || evaluation.userId;
+      const evaluatorName = getEvaluatorName(userId).toLowerCase();
       const searchLower = searchTerm.toLowerCase();
+      
+      const strengths = (evaluation.Strengths || evaluation.strengths || '').toLowerCase();
+      const weaknesses = (evaluation.Weaknesses || evaluation.weaknesses || '').toLowerCase();
+      const recommendation = (evaluation.Recommendation || evaluation.recommendation || '').toLowerCase();
       
       const matchesSearch = projectTitle.includes(searchLower) || 
                            evaluatorName.includes(searchLower) ||
-                           evaluation.strengths?.toLowerCase().includes(searchLower) ||
-                           evaluation.weaknesses?.toLowerCase().includes(searchLower) ||
-                           evaluation.recommendation?.toLowerCase().includes(searchLower);
+                           strengths.includes(searchLower) ||
+                           weaknesses.includes(searchLower) ||
+                           recommendation.includes(searchLower);
       
       if (filterStatus === 'all') return matchesSearch;
       
@@ -125,18 +149,22 @@ const AllResults = () => {
     })
     .sort((a, b) => {
       if (sortBy === 'date') {
-        return new Date(b.evaluatedAt) - new Date(a.evaluatedAt);
+        const dateA = new Date(a.EvaluatedAt || a.evaluatedAt);
+        const dateB = new Date(b.EvaluatedAt || b.evaluatedAt);
+        return dateB - dateA;
       }
       if (sortBy === 'score') {
         return calculateAverageScore(b) - calculateAverageScore(a);
       }
       if (sortBy === 'project') {
-        const titleA = a.projectData?.startupName || '';
-        const titleB = b.projectData?.startupName || '';
+        const titleA = a.projectData?.StartupName || a.projectData?.startupName || '';
+        const titleB = b.projectData?.StartupName || b.projectData?.startupName || '';
         return titleA.localeCompare(titleB);
       }
       if (sortBy === 'evaluator') {
-        return getEvaluatorName(a.userId).localeCompare(getEvaluatorName(b.userId));
+        const userIdA = a.UserId || a.userId;
+        const userIdB = b.UserId || b.userId;
+        return getEvaluatorName(userIdA).localeCompare(getEvaluatorName(userIdB));
       }
       return 0;
     });
@@ -301,19 +329,25 @@ const AllResults = () => {
                 {filteredAndSortedEvaluations.map((evaluation) => {
                   const avgScore = calculateAverageScore(evaluation);
                   const scoreBadge = getScoreBadge(avgScore);
+                  const evaluationId = evaluation.EvaluationId || evaluation.evaluationId;
+                  const userId = evaluation.UserId || evaluation.userId;
+                  const projectId = evaluation.ProjectId || evaluation.projectId;
+                  const evaluatedAt = evaluation.EvaluatedAt || evaluation.evaluatedAt;
+                  const projectName = evaluation.projectData?.StartupName || evaluation.projectData?.startupName || 'Unknown Project';
+                  
                   return (
-                    <tr key={evaluation.evaluationId} className="hover:bg-gray-50">
+                    <tr key={evaluationId} className="hover:bg-gray-50">
                       <td className="px-4 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {evaluation.projectData?.startupName || 'Unknown Project'}
+                          {projectName}
                         </div>
                       </td>
                       <td className="px-4 sm:px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {getEvaluatorName(evaluation.userId)}
+                          {getEvaluatorName(userId)}
                         </div>
                         <div className="text-xs text-gray-500 hidden sm:block">
-                          {getEvaluatorEmail(evaluation.userId)}
+                          {getEvaluatorEmail(userId)}
                         </div>
                       </td>
                       <td className="px-4 sm:px-6 py-4">
@@ -330,7 +364,7 @@ const AllResults = () => {
                         </span>
                       </td>
                       <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
-                        {new Date(evaluation.evaluatedAt).toLocaleDateString('en-US', {
+                        {new Date(evaluatedAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
@@ -340,7 +374,7 @@ const AllResults = () => {
                       </td>
                       <td className="px-4 sm:px-6 py-4 text-sm">
                         <Link
-                          to={`/superadmin/projects/${evaluation.projectId}`}
+                          to={`/superadmin/projects/${projectId}`}
                           className="text-[#ab509d] hover:text-[#964a8a] font-medium"
                         >
                           View Details

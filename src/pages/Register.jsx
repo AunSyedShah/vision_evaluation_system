@@ -1,5 +1,6 @@
 import { useFormik } from 'formik';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
@@ -105,7 +106,7 @@ const Register = () => {
       
       if (result.success) {
         setError('');
-        alert('OTP has been resent to your email!');
+        toast.success('OTP has been resent to your email!');
       } else {
         setError(result.error);
       }

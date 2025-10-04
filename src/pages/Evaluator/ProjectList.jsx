@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAssignedProjects } from '../../utils/api';
+import { getAssignedProjects, getMyEvaluations } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
 const EvaluatorProjectList = () => {
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
 
   useEffect(() => {
     if (currentUser) {
@@ -17,40 +21,54 @@ const EvaluatorProjectList = () => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const data = await getAssignedProjects();
       
-      // Debug: Log the raw API response
+      // Fetch assigned projects
+      const data = await getAssignedProjects();
       console.log('📊 Raw API Response:', data);
       
       // Handle ReferenceHandler.Preserve format
       let projectsArray = data.$values || data;
-      
-      // Debug: Log the extracted array
-      console.log('📋 Projects Array:', projectsArray);
       
       // Ensure it's an array
       if (!Array.isArray(projectsArray)) {
         projectsArray = [];
       }
       
-      // Debug: Log first project to see structure
-      if (projectsArray.length > 0) {
-        console.log('🔍 First Project Structure:', projectsArray[0]);
+      console.log('📋 Projects Array:', projectsArray);
+      
+      // Fetch user's evaluations
+      const evaluationsData = await getMyEvaluations();
+      let evaluationsArray = evaluationsData.$values || evaluationsData;
+      
+      // Ensure it's an array
+      if (!Array.isArray(evaluationsArray)) {
+        evaluationsArray = [];
       }
       
+      console.log('✅ My Evaluations:', evaluationsArray);
+      
       setProjects(projectsArray);
+      setEvaluations(evaluationsArray);
     } catch (error) {
-      console.error('❌ Failed to load assigned projects:', error);
+      console.error('❌ Failed to load data:', error);
       setProjects([]);
+      setEvaluations([]);
     } finally {
       setLoading(false);
     }
   };
 
   const getEvaluationStatus = (project) => {
-    // Check if project has IsEvaluated field from backend
-    const isEvaluated = project.IsEvaluated || project.isEvaluated;
-    if (isEvaluated) {
+    // Get project ID
+    const projectId = project.Id || project.id || project.ProjectId || project.projectId;
+    
+    // Check if user has already evaluated this project
+    const hasEvaluated = evaluations.some(evaluation => {
+      const evalProjectId = evaluation.ProjectId || evaluation.projectId;
+      return evalProjectId === projectId;
+    });
+    
+    if (hasEvaluated) {
       return { text: 'Completed', color: 'bg-green-100 text-green-800' };
     }
     return { text: 'Pending', color: 'bg-orange-100 text-orange-800' };
@@ -65,6 +83,43 @@ const EvaluatorProjectList = () => {
     );
   }
 
+  // Filter and sort projects
+  const filteredAndSortedProjects = projects
+    .filter(project => {
+      // Search filter
+      const startupName = (project.StartupName || project.startupName || '').toLowerCase();
+      const startupDescription = (project.StartupDescription || project.startupDescription || '').toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = startupName.includes(searchLower) || startupDescription.includes(searchLower);
+      
+      // Status filter
+      if (filterStatus === 'all') return matchesSearch;
+      
+      const status = getEvaluationStatus(project);
+      if (filterStatus === 'completed') return matchesSearch && status.text === 'Completed';
+      if (filterStatus === 'pending') return matchesSearch && status.text === 'Pending';
+      
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name') {
+        const nameA = (a.StartupName || a.startupName || '').toLowerCase();
+        const nameB = (b.StartupName || b.startupName || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      }
+      if (sortBy === 'date') {
+        const dateA = new Date(a.StartDate || a.startDate || 0);
+        const dateB = new Date(b.StartDate || b.startDate || 0);
+        return dateB - dateA;
+      }
+      if (sortBy === 'status') {
+        const statusA = getEvaluationStatus(a).text;
+        const statusB = getEvaluationStatus(b).text;
+        return statusA.localeCompare(statusB);
+      }
+      return 0;
+    });
+
   return (
     <div>
       <div className="mb-8">
@@ -72,15 +127,81 @@ const EvaluatorProjectList = () => {
         <p className="text-gray-600">View and evaluate projects assigned to you</p>
       </div>
 
-      {projects.length === 0 ? (
+      {/* Filter and Search */}
+      {projects.length > 0 && (
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Projects
+              </label>
+              <input
+                type="text"
+                placeholder="Search by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+              />
+            </div>
+
+            {/* Filter by Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+              >
+                <option value="all">All Projects</option>
+                <option value="pending">Pending Evaluation</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+              >
+                <option value="date">Start Date (Newest)</option>
+                <option value="name">Project Name (A-Z)</option>
+                <option value="status">Status</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Results count */}
+          {filteredAndSortedProjects.length !== projects.length && (
+            <div className="mt-4 text-sm text-gray-600">
+              Showing {filteredAndSortedProjects.length} of {projects.length} projects
+            </div>
+          )}
+        </div>
+      )}
+
+      {filteredAndSortedProjects.length === 0 ? (
         <div className="bg-white rounded-xl shadow-md p-12 text-center">
           <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Projects Assigned</h3>
-          <p className="text-gray-600">You don't have any projects assigned yet. Check back later!</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {projects.length === 0 ? 'No Projects Assigned' : 'No Projects Found'}
+          </h3>
+          <p className="text-gray-600">
+            {projects.length === 0 
+              ? "You don't have any projects assigned yet. Check back later!" 
+              : 'Try adjusting your search or filters'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => {
+          {filteredAndSortedProjects.map((project) => {
             const status = getEvaluationStatus(project);
             // Backend Project model uses 'Id' as primary key
             const projectId = project.Id || project.id || project.ProjectId || project.projectId;

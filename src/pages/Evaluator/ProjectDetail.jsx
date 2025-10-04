@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
+import toast from 'react-hot-toast';
 import { 
   getAssignedProjects,
   getMyEvaluations,
@@ -138,13 +139,13 @@ const EvaluatorProjectDetail = () => {
 
         await submitEvaluation(id, evaluationData);
         
-        alert(existingEvaluation 
+        toast.success(existingEvaluation 
           ? 'Evaluation updated successfully!' 
           : 'Evaluation submitted successfully!');
         navigate('/evaluator/projects');
       } catch (error) {
         console.error('❌ Failed to submit evaluation:', error);
-        alert(error.response?.data?.message || 'Failed to submit evaluation. Please try again.');
+        toast.error(error.response?.data?.message || 'Failed to submit evaluation. Please try again.');
       } finally {
         setSubmitting(false);
       }

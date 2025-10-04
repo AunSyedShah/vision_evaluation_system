@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { getAllProjects, deleteProject as apiDeleteProject } from '../../utils/api';
+import AssignEvaluatorsModal from '../../components/AssignEvaluatorsModal';
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   useEffect(() => {
     loadProjects();
@@ -48,9 +52,23 @@ const ProjectList = () => {
         await loadProjects();
       } catch (err) {
         console.error('Failed to delete project:', err);
-        alert(err.response?.data?.message || 'Failed to delete project. Please try again.');
+        toast.error(err.response?.data?.message || 'Failed to delete project. Please try again.');
       }
     }
+  };
+
+  const handleOpenAssignModal = (project) => {
+    setSelectedProject(project);
+    setAssignModalOpen(true);
+  };
+
+  const handleCloseAssignModal = () => {
+    setAssignModalOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleAssignSuccess = () => {
+    loadProjects(); // Reload projects after assignment
   };
 
   const filteredProjects = projects.filter(project =>
@@ -182,6 +200,13 @@ const ProjectList = () => {
                         Edit
                       </Link>
                       <button
+                        onClick={() => handleOpenAssignModal(project)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Assign Evaluators"
+                      >
+                        Assign
+                      </button>
+                      <button
                         onClick={() => handleDelete(project.id)}
                         className="text-red-600 hover:text-red-900"
                       >
@@ -194,6 +219,17 @@ const ProjectList = () => {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Assign Evaluators Modal */}
+      {selectedProject && (
+        <AssignEvaluatorsModal
+          isOpen={assignModalOpen}
+          onClose={handleCloseAssignModal}
+          projectId={selectedProject.id}
+          projectName={selectedProject.startupName || 'Untitled Project'}
+          onSuccess={handleAssignSuccess}
+        />
       )}
     </div>
   );
