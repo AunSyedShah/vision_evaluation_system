@@ -51,9 +51,7 @@ const Topbar = ({ onMenuToggle }) => {
             </svg>
           </button>
           
-          <img src="/vision_logo.png" alt="Logo" className="h-6 sm:h-8 w-6 sm:w-8 object-contain" />
-          <h2 className="hidden sm:block text-lg sm:text-xl font-bold text-gray-800">Project Evaluation System</h2>
-          <h2 className="sm:hidden text-lg font-bold text-gray-800">PES</h2>
+          <img src="/vision_logo.png" alt="Vision Logo" className="h-10 sm:h-12 w-10 sm:w-12 object-contain" />
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">

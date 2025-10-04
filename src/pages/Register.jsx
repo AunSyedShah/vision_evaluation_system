@@ -129,8 +129,8 @@ const Register = () => {
       </div>
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 mx-4">
         <div className="text-center mb-6 sm:mb-8">
-          <div className="flex justify-center mb-3 sm:mb-4">
-            <img src="/vision_logo.png" alt="Logo" className="h-12 w-12 sm:h-16 sm:w-16 object-contain" />
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <img src="/vision_logo.png" alt="Vision Logo" className="h-24 w-24 sm:h-32 sm:w-32 object-contain" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Evaluator Registration</h1>
           <p className="text-sm sm:text-base text-gray-600">Create your evaluator account</p>

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { getAllEvaluators, assignProjectToEvaluators, getEvaluationsByProject } from '../utils/api';
+import { getAllEvaluators, updateProjectAssignment, getAssignedUsers, unassignUser, getEvaluationsByProject, getProjectById } from '../utils/api';
 
 const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSuccess }) => {
   const [evaluators, setEvaluators] = useState([]);
   const [selectedEvaluators, setSelectedEvaluators] = useState([]);
+  const [initialAssignedEvaluators, setInitialAssignedEvaluators] = useState([]); // Track original assignments
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -36,23 +37,101 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
       console.log('📋 All Evaluators (extracted):', allEvaluators);
       console.log('📋 First user structure:', allEvaluators[0]);
       
-      // Fetch existing evaluations for this project to get already assigned evaluators
-      let projectEvaluations = [];
+      // Get assigned evaluators using the new endpoint
+      let assignedEvaluatorIds = [];
+      
+      // Method 1: Use new dedicated endpoint (preferred)
       try {
-        const evaluationsData = await getEvaluationsByProject(parseInt(projectId));
-        projectEvaluations = evaluationsData?.$values || evaluationsData || [];
-        console.log('📊 Project Evaluations:', projectEvaluations);
-      } catch (evalErr) {
-        console.log('ℹ️ No existing evaluations found (or error fetching):', evalErr.message);
-        // It's okay if no evaluations exist yet
+        const response = await getAssignedUsers(parseInt(projectId));
+        console.log('📦 Assigned Users from endpoint (raw):', response);
+        console.log('📦 Type of response:', typeof response, Array.isArray(response));
+        
+        // The backend returns: { $id, project, assignedUsers: {...} }
+        // Extract the assignedUsers property first
+        let assignedUsersData = response;
+        
+        // Check if response has assignedUsers property
+        if (response && response.assignedUsers) {
+          assignedUsersData = response.assignedUsers;
+          console.log('📦 Extracted assignedUsers property:', assignedUsersData);
+        } else if (response && response.AssignedUsers) {
+          assignedUsersData = response.AssignedUsers;
+          console.log('📦 Extracted AssignedUsers property:', assignedUsersData);
+        }
+        
+        // Handle .NET ReferenceHandler.Preserve format ($values)
+        let usersList = assignedUsersData;
+        if (assignedUsersData && assignedUsersData.$values) {
+          usersList = assignedUsersData.$values;
+          console.log('📦 Extracted $values:', usersList);
+        }
+        
+        // Extract user IDs from the response
+        if (Array.isArray(usersList)) {
+          assignedEvaluatorIds = usersList.map(user => {
+            // If it's already a number, use it directly
+            if (typeof user === 'number') {
+              return user;
+            }
+            // If it's an object, extract the ID
+            if (typeof user === 'object' && user !== null) {
+              return user.userId || user.UserId || user.id || user.Id;
+            }
+            // Otherwise, try to parse it
+            return user;
+          }).filter(id => id !== null && id !== undefined);
+          
+          console.log('✅ Assigned evaluator IDs from dedicated endpoint:', assignedEvaluatorIds);
+          console.log('🔍 Types:', assignedEvaluatorIds.map(id => typeof id));
+        } else {
+          console.log('⚠️ usersList is not an array:', usersList);
+        }
+      } catch (err) {
+        console.log('ℹ️ Could not fetch assigned users from endpoint:', err.message);
+        
+        // Fallback Method 2: Try project details
+        try {
+          const projectData = await getProjectById(parseInt(projectId));
+          console.log('📦 Project Data (fallback):', projectData);
+          
+          if (projectData.AssignedEvaluators && Array.isArray(projectData.AssignedEvaluators)) {
+            assignedEvaluatorIds = projectData.AssignedEvaluators.map(e => 
+              e.UserId || e.userId || e.Id || e.id || e
+            ).filter(Boolean);
+            console.log('✅ Assigned evaluators from project.AssignedEvaluators:', assignedEvaluatorIds);
+          } else if (projectData.assignedEvaluators && Array.isArray(projectData.assignedEvaluators)) {
+            assignedEvaluatorIds = projectData.assignedEvaluators.map(e => 
+              e.userId || e.UserId || e.id || e.Id || e
+            ).filter(Boolean);
+            console.log('✅ Assigned evaluators from project.assignedEvaluators:', assignedEvaluatorIds);
+          }
+        } catch (projectErr) {
+          console.log('ℹ️ Could not fetch project details:', projectErr.message);
+        }
+        
+        // Fallback Method 3: Try getting from evaluations (only shows submitted)
+        if (assignedEvaluatorIds.length === 0) {
+          try {
+            const evaluationsData = await getEvaluationsByProject(parseInt(projectId));
+            const projectEvaluations = evaluationsData?.$values || evaluationsData || [];
+            console.log('📊 Project Evaluations (fallback):', projectEvaluations);
+            
+            assignedEvaluatorIds = projectEvaluations.map(evaluation => 
+              evaluation.UserId || evaluation.userId
+            ).filter(Boolean);
+            
+            console.log('✅ Assigned evaluators from evaluations:', assignedEvaluatorIds);
+          } catch (evalErr) {
+            console.log('ℹ️ No existing evaluations found:', evalErr.message);
+          }
+        }
       }
       
-      // Extract user IDs from evaluations
-      const assignedEvaluatorIds = projectEvaluations.map(evaluation => 
-        evaluation.UserId || evaluation.userId
-      ).filter(Boolean);
+      console.log('✅ Final assigned evaluator IDs:', assignedEvaluatorIds);
+      console.log('🔍 Type of assigned IDs:', assignedEvaluatorIds.map(id => typeof id));
       
-      console.log('✅ Already assigned evaluator IDs:', assignedEvaluatorIds);
+      // Store initial assignments for diff calculation
+      setInitialAssignedEvaluators(assignedEvaluatorIds);
       
       // Pre-select already assigned evaluators
       setSelectedEvaluators(assignedEvaluatorIds);
@@ -82,6 +161,10 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
         : [];
       
       console.log('✅ Filtered verified evaluators:', evaluatorsList);
+      console.log('🔍 Evaluator IDs extracted from list:', evaluatorsList.map(e => {
+        const id = e.userId || e.UserId || e.Id || e.id;
+        return { id, type: typeof id };
+      }));
       setEvaluators(evaluatorsList);
     } catch (err) {
       console.error('❌ Failed to load evaluators:', err);
@@ -100,27 +183,78 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
   };
 
   const handleAssign = async () => {
-    if (selectedEvaluators.length === 0) {
-      toast.warning('Please select at least one evaluator');
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError('');
       
-      console.log('📤 Assigning evaluators:', {
+      console.log('📤 Assignment Update Request:', {
         ProjectId: parseInt(projectId),
-        UserIds: selectedEvaluators
+        Initial: initialAssignedEvaluators,
+        Selected: selectedEvaluators,
+        InitialCount: initialAssignedEvaluators.length,
+        SelectedCount: selectedEvaluators.length
       });
 
-      await assignProjectToEvaluators({
-        ProjectId: parseInt(projectId),
-        UserIds: selectedEvaluators
+      // Calculate diff: which users to remove and which to add
+      const usersToRemove = initialAssignedEvaluators.filter(id => !selectedEvaluators.includes(id));
+      const usersToAdd = selectedEvaluators.filter(id => !initialAssignedEvaluators.includes(id));
+      
+      console.log('🔄 Assignment Diff:', {
+        ToRemove: usersToRemove,
+        ToAdd: usersToAdd,
+        RemoveCount: usersToRemove.length,
+        AddCount: usersToAdd.length
       });
 
-      toast.success('Evaluators assigned successfully!');
+      // Step 1: Remove users using DELETE endpoint
+      if (usersToRemove.length > 0) {
+        console.log('🗑️ Removing users:', usersToRemove);
+        for (const userId of usersToRemove) {
+          try {
+            await unassignUser(parseInt(projectId), userId);
+            console.log(`✅ Removed user ${userId}`);
+          } catch (removeErr) {
+            console.error(`❌ Failed to remove user ${userId}:`, removeErr);
+            throw new Error(`Failed to remove evaluator (ID: ${userId})`);
+          }
+        }
+      }
+
+      // Step 2: Add new users using PUT endpoint (if any to add)
+      if (usersToAdd.length > 0) {
+        console.log('➕ Adding users:', usersToAdd);
+        try {
+          await updateProjectAssignment({
+            ProjectId: parseInt(projectId),
+            UserIds: selectedEvaluators // Send complete list to ensure consistency
+          });
+          console.log('✅ Added new users');
+        } catch (addErr) {
+          // If PUT fails with "already assigned", it might mean only existing users were selected
+          const errorData = addErr.response?.data || '';
+          const isAlreadyAssignedError = typeof errorData === 'string' && 
+            errorData.toLowerCase().includes('already assigned');
+          
+          if (!isAlreadyAssignedError) {
+            throw addErr; // Re-throw if it's not the "already assigned" error
+          }
+          console.log('ℹ️ No new users to add (all already assigned)');
+        }
+      }
+
+      // Success message based on what changed
+      if (usersToRemove.length > 0 && usersToAdd.length > 0) {
+        toast.success(`Updated assignments: Removed ${usersToRemove.length}, Added ${usersToAdd.length}`);
+      } else if (usersToRemove.length > 0) {
+        toast.success(`Removed ${usersToRemove.length} evaluator(s) from project`);
+      } else if (usersToAdd.length > 0) {
+        toast.success(`Added ${usersToAdd.length} evaluator(s) to project`);
+      } else {
+        toast.success('No changes to assignments');
+      }
+      
       setSelectedEvaluators([]);
+      setInitialAssignedEvaluators([]);
       
       if (onSuccess) {
         onSuccess();
@@ -128,8 +262,21 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
       
       onClose();
     } catch (err) {
-      console.error('❌ Failed to assign evaluators:', err);
-      setError(err.response?.data?.message || 'Failed to assign evaluators. Please try again.');
+      console.error('❌ Failed to update evaluator assignments:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      const errorMessage = err.response?.data?.message 
+        || err.response?.data?.title
+        || (typeof err.response?.data === 'string' ? err.response.data : null)
+        || err.message 
+        || 'Failed to update evaluator assignments. Please try again.';
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -201,6 +348,20 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
                 const evaluatorName = evaluator.username || evaluator.Username || evaluator.name || evaluator.Name || evaluator.email || evaluator.Email || 'Unknown';
                 const evaluatorEmail = evaluator.email || evaluator.Email || '';
                 const isSelected = selectedEvaluators.includes(evaluatorId);
+                
+                // Debug logging for first render
+                if (evaluators.indexOf(evaluator) === 0) {
+                  console.log('🔍 Checkbox Comparison Debug:');
+                  console.log('  - evaluatorId:', evaluatorId, typeof evaluatorId);
+                  console.log('  - selectedEvaluators:', selectedEvaluators);
+                  console.log('  - includes result:', isSelected);
+                  console.log('  - Comparison:', selectedEvaluators.map(id => ({
+                    id,
+                    type: typeof id,
+                    matches: id === evaluatorId,
+                    looseMatches: id == evaluatorId
+                  })));
+                }
 
                 return (
                   <div
@@ -247,16 +408,18 @@ const AssignEvaluatorsModal = ({ isOpen, onClose, projectId, projectName, onSucc
           </button>
           <button
             onClick={handleAssign}
-            disabled={submitting || selectedEvaluators.length === 0 || loading}
+            disabled={submitting || loading}
             className="px-6 py-2 bg-[#ab509d] hover:bg-[#964a8a] text-white font-semibold rounded-lg shadow-md transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>
                 <span className="inline-block animate-spin mr-2">⏳</span>
-                Assigning...
+                Updating...
               </>
+            ) : selectedEvaluators.length === 0 ? (
+              <>🗑️ Remove All Evaluators</>
             ) : (
-              <>✓ Assign Selected ({selectedEvaluators.length})</>
+              <>✓ Update Assignments ({selectedEvaluators.length})</>
             )}
           </button>
         </div>

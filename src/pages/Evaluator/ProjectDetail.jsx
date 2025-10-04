@@ -106,15 +106,15 @@ const EvaluatorProjectDetail = () => {
         }
       });
       
-      // Validate text fields
-      if (!values.strengths || values.strengths.trim().length < 10) {
-        errors.strengths = 'Please provide at least 10 characters';
+      // Validate text fields (only check if not empty)
+      if (!values.strengths || values.strengths.trim().length === 0) {
+        errors.strengths = 'Please provide your feedback';
       }
-      if (!values.weaknesses || values.weaknesses.trim().length < 10) {
-        errors.weaknesses = 'Please provide at least 10 characters';
+      if (!values.weaknesses || values.weaknesses.trim().length === 0) {
+        errors.weaknesses = 'Please provide your feedback';
       }
-      if (!values.recommendation || values.recommendation.trim().length < 10) {
-        errors.recommendation = 'Please provide at least 10 characters';
+      if (!values.recommendation || values.recommendation.trim().length === 0) {
+        errors.recommendation = 'Please provide your recommendation';
       }
       
       return errors;
@@ -181,8 +181,6 @@ const EvaluatorProjectDetail = () => {
 
   const startupName = project.StartupName || project.startupName || 'Untitled Project';
   const startupDescription = project.StartupDescription || project.startupDescription || 'No description available';
-  const startDate = project.StartDate || project.startDate;
-  const endDate = project.EndDate || project.endDate;
 
   return (
     <div>
@@ -226,79 +224,183 @@ const EvaluatorProjectDetail = () => {
           {activeTab === 'info' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {startDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Start Date</label>
-                    <p className="text-gray-900 font-medium">{new Date(startDate).toLocaleDateString()}</p>
-                  </div>
-                )}
-                {endDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">End Date</label>
-                    <p className="text-gray-900 font-medium">{new Date(endDate).toLocaleDateString()}</p>
-                  </div>
-                )}
+                {/* Founder Information */}
                 {(project.FounderName || project.founderName) && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">Founder Name</label>
                     <p className="text-gray-900 font-medium">{project.FounderName || project.founderName}</p>
                   </div>
                 )}
-                {(project.FounderEmail || project.founderEmail) && (
+                {(project.Email || project.email) && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Founder Email</label>
-                    <p className="text-gray-900 font-medium">{project.FounderEmail || project.founderEmail}</p>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                    <p className="text-gray-900 font-medium">{project.Email || project.email}</p>
                   </div>
                 )}
-                {(project.FounderLinkedIn || project.founderLinkedIn) && (
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500 mb-1">Founder LinkedIn</label>
-                    <a 
-                      href={project.FounderLinkedIn || project.founderLinkedIn} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-[#ab509d] hover:underline"
-                    >
-                      {project.FounderLinkedIn || project.founderLinkedIn}
-                    </a>
+                {(project.Phone || project.phone) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Phone</label>
+                    <p className="text-gray-900 font-medium">{project.Phone || project.phone}</p>
+                  </div>
+                )}
+                {(project.Username || project.username) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Username</label>
+                    <p className="text-gray-900 font-medium">{project.Username || project.username}</p>
+                  </div>
+                )}
+                {(project.StartupStatus || project.startupStatus) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Startup Status</label>
+                    <p className="text-gray-900 font-medium">{project.StartupStatus || project.startupStatus}</p>
+                  </div>
+                )}
+                {(project.Timestamp || project.timestamp) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
+                    <p className="text-gray-900 font-medium">
+                      {new Date(project.Timestamp || project.timestamp).toLocaleDateString()}
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Media Section */}
-              {((project.StartupLogo || project.startupLogo) || 
-                (project.FounderPhoto || project.founderPhoto) || 
-                (project.DefaultVideo || project.defaultVideo) || 
-                (project.PitchVideo || project.pitchVideo)) && (
-                <div className="mt-8 space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">📸 Project Media</h3>
-                  
+              {/* Links Section */}
+              {((project.WebsiteLink || project.websiteLink) || (project.MobileAppLink || project.mobileAppLink)) && (
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">🔗 Links</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {(project.StartupLogo || project.startupLogo) && (
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">🏢 Startup Logo</label>
-                        <img 
-                          src={`http://localhost:5063${project.StartupLogo || project.startupLogo}`} 
-                          alt="Startup Logo" 
-                          className="max-w-full h-auto rounded-lg shadow-md border border-gray-300 bg-white"
-                          onError={(e) => { e.target.src = '/vision_logo.png'; }}
-                        />
+                    {(project.WebsiteLink || project.websiteLink) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Website Link</label>
+                        <a 
+                          href={project.WebsiteLink || project.websiteLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[#ab509d] hover:underline break-all"
+                        >
+                          {project.WebsiteLink || project.websiteLink}
+                        </a>
                       </div>
                     )}
-                    
-                    {(project.FounderPhoto || project.founderPhoto) && (
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">👤 Founder Photo</label>
-                        <img 
-                          src={`http://localhost:5063${project.FounderPhoto || project.founderPhoto}`} 
-                          alt="Founder" 
-                          className="max-w-full h-auto rounded-lg shadow-md border border-gray-300 bg-white"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
+                    {(project.MobileAppLink || project.mobileAppLink) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Mobile App Link</label>
+                        <a 
+                          href={project.MobileAppLink || project.mobileAppLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[#ab509d] hover:underline break-all"
+                        >
+                          {project.MobileAppLink || project.mobileAppLink}
+                        </a>
                       </div>
                     )}
                   </div>
+                </div>
+              )}
 
+              {/* Spotlight Reason */}
+              {(project.SpotlightReason || project.spotlightReason) && (
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">✨ Spotlight Reason</h3>
+                  <p className="text-gray-700 leading-relaxed">{project.SpotlightReason || project.spotlightReason}</p>
+                </div>
+              )}
+
+              {/* Media Section */}
+              <div className="border-t border-gray-200 pt-6 space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📁 Project Media</h3>
+
+                {/* Images Section - All images grouped together */}
+                <div className="space-y-6">
+                  {/* Startup Logo */}
+                  {(project.StartupLogo || project.startupLogo) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🏢 Startup Logo</label>
+                      <img 
+                        src={`http://localhost:5063${project.StartupLogo || project.startupLogo}`} 
+                        alt="Startup Logo" 
+                        className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
+                        onError={(e) => { e.target.src = '/vision_logo.png'; }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Founder Photo */}
+                  {(project.FounderPhoto || project.founderPhoto) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">� Founder Photo</label>
+                      <img 
+                        src={`http://localhost:5063${project.FounderPhoto || project.founderPhoto}`} 
+                        alt="Founder Photo" 
+                        className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Project Images */}
+                  {((project.Image1 || project.image1) || (project.Image2 || project.image2) || (project.Image3 || project.image3)) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">📸 Project Images</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {(project.Image1 || project.image1) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 1</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image1 || project.image1}`} 
+                              alt="Project Image 1" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        {(project.Image2 || project.image2) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 2</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image2 || project.image2}`} 
+                              alt="Project Image 2" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        {(project.Image3 || project.image3) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 3</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image3 || project.image3}`} 
+                              alt="Project Image 3" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Videos Section - All videos grouped together at the bottom */}
+                <div className="space-y-6">
+                  {/* Default Video */}
+                  {(project.DefaultVideo || project.defaultVideo) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🎥 Default Video</label>
+                      <video 
+                        controls 
+                        className="max-w-2xl rounded-lg shadow-md border border-gray-300"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      >
+                        <source src={`http://localhost:5063${project.DefaultVideo || project.defaultVideo}`} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  )}
+
+                  {/* Pitch Video */}
                   {(project.PitchVideo || project.pitchVideo) && (
                     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                       <label className="block text-sm font-medium text-gray-700 mb-2">🎬 Pitch Video</label>
@@ -313,7 +415,7 @@ const EvaluatorProjectDetail = () => {
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -328,171 +430,222 @@ const EvaluatorProjectDetail = () => {
               )}
 
               {/* Scoring Criteria */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">📊 Evaluation Scores (1-10)</h3>
-                <p className="text-sm text-gray-600">Rate each criterion from 1 (Poor) to 10 (Excellent)</p>
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">📊 Evaluation Scores (1-10)</h3>
+                  <p className="text-sm text-gray-600 mt-2">Rate each criterion from 1 (Poor) to 10 (Excellent)</p>
+                </div>
 
                 {/* Problem Significance */}
                 <div>
-                  <label htmlFor="problemSignificance" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     1️⃣ Problem Significance & Need
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="problemSignificance"
-                      name="problemSignificance"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.problemSignificance}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.problemSignificance}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="problemSignificance"
+                          value={score}
+                          checked={formik.values.problemSignificance === score}
+                          onChange={() => formik.setFieldValue('problemSignificance', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.problemSignificance === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                   {formik.touched.problemSignificance && formik.errors.problemSignificance && (
-                    <div className="text-red-600 text-sm mt-1">{formik.errors.problemSignificance}</div>
+                    <div className="text-red-600 text-sm mt-2">{formik.errors.problemSignificance}</div>
                   )}
                 </div>
 
                 {/* Innovation & Technical */}
                 <div>
-                  <label htmlFor="innovationTechnical" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     2️⃣ Innovation & Technical Sophistication
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="innovationTechnical"
-                      name="innovationTechnical"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.innovationTechnical}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.innovationTechnical}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="innovationTechnical"
+                          value={score}
+                          checked={formik.values.innovationTechnical === score}
+                          onChange={() => formik.setFieldValue('innovationTechnical', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.innovationTechnical === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 {/* Market & Scalability */}
                 <div>
-                  <label htmlFor="marketScalability" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     3️⃣ Market Opportunity & Scalability
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="marketScalability"
-                      name="marketScalability"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.marketScalability}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.marketScalability}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="marketScalability"
+                          value={score}
+                          checked={formik.values.marketScalability === score}
+                          onChange={() => formik.setFieldValue('marketScalability', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.marketScalability === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 {/* Traction & Impact */}
                 <div>
-                  <label htmlFor="tractionImpact" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     4️⃣ Traction & Demonstrated Impact
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="tractionImpact"
-                      name="tractionImpact"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.tractionImpact}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.tractionImpact}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="tractionImpact"
+                          value={score}
+                          checked={formik.values.tractionImpact === score}
+                          onChange={() => formik.setFieldValue('tractionImpact', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.tractionImpact === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 {/* Business Model */}
                 <div>
-                  <label htmlFor="businessModel" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     5️⃣ Business Model & Revenue Potential
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="businessModel"
-                      name="businessModel"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.businessModel}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.businessModel}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="businessModel"
+                          value={score}
+                          checked={formik.values.businessModel === score}
+                          onChange={() => formik.setFieldValue('businessModel', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.businessModel === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 {/* Team & Execution */}
                 <div>
-                  <label htmlFor="teamExecution" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     6️⃣ Team Competence & Execution Capability
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="teamExecution"
-                      name="teamExecution"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.teamExecution}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.teamExecution}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="teamExecution"
+                          value={score}
+                          checked={formik.values.teamExecution === score}
+                          onChange={() => formik.setFieldValue('teamExecution', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.teamExecution === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 {/* Ethics & Equity */}
                 <div>
-                  <label htmlFor="ethicsEquity" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     7️⃣ Ethics & Equity Considerations
                   </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      id="ethicsEquity"
-                      name="ethicsEquity"
-                      type="range"
-                      min="1"
-                      max="10"
-                      onChange={formik.handleChange}
-                      value={formik.values.ethicsEquity}
-                      disabled={existingEvaluation}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#ab509d] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-2xl font-bold text-[#ab509d] w-12 text-center">
-                      {formik.values.ethicsEquity}
-                    </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                      <label key={score} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="ethicsEquity"
+                          value={score}
+                          checked={formik.values.ethicsEquity === score}
+                          onChange={() => formik.setFieldValue('ethicsEquity', score)}
+                          disabled={existingEvaluation}
+                          className="sr-only peer"
+                        />
+                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          ${formik.values.ethicsEquity === score 
+                            ? 'bg-[#ab509d] text-white border-[#ab509d]' 
+                            : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                          {score}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 

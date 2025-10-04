@@ -53,9 +53,26 @@ api.interceptors.response.use(
       // Handle specific status codes
       if (error.response.status === 401) {
         console.warn('🔒 Authentication Error: Token expired or invalid');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        
+        // Check if this is an OTP verification error (unverified account)
+        const errorMessage = error.response?.data?.message || error.response?.data || '';
+        const isOtpVerificationError = 
+          typeof errorMessage === 'string' && 
+          (errorMessage.toLowerCase().includes('otp') || 
+           errorMessage.toLowerCase().includes('verify') ||
+           errorMessage.toLowerCase().includes('email verification'));
+        
+        if (isOtpVerificationError) {
+          console.warn('📧 OTP Verification Required: User needs to verify email');
+          // Don't redirect - let the Login component handle showing OTP form
+          // Just pass the error through
+        } else {
+          // Only redirect for actual authentication failures (invalid token, expired session)
+          console.warn('🔒 Clearing credentials and redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       } else if (error.response.status === 403) {
         console.warn('🚫 Authorization Error: Access forbidden');
       } else if (error.response.status === 404) {
@@ -269,12 +286,43 @@ export const getAllEvaluators = async () => {
 };
 
 /**
- * Assign project to multiple evaluators
+ * Assign project to multiple evaluators (SuperAdmin) - Initial assignment
  * @param {Object} assignmentData - { projectId, userIds: [1, 2, 3] }
  * @returns {Promise} Success message
  */
 export const assignProjectToEvaluators = async (assignmentData) => {
   const response = await api.post('/SuperAdmin/assignProject', assignmentData);
+  return response.data;
+};
+
+/**
+ * Update project evaluator assignments (SuperAdmin) - Replace existing assignments
+ * @param {Object} assignmentData - { projectId, userIds: [1, 2, 3] }
+ * @returns {Promise} Success message
+ */
+export const updateProjectAssignment = async (assignmentData) => {
+  const response = await api.put('/SuperAdmin/updateAssignment', assignmentData);
+  return response.data;
+};
+
+/**
+ * Get assigned users for a project (SuperAdmin)
+ * @param {number} projectId - Project ID
+ * @returns {Promise} Array of assigned user IDs
+ */
+export const getAssignedUsers = async (projectId) => {
+  const response = await api.get(`/SuperAdmin/getAssignedUsers/${projectId}`);
+  return response.data;
+};
+
+/**
+ * Unassign a single user from a project (SuperAdmin)
+ * @param {number} projectId - Project ID
+ * @param {number} userId - User ID to remove
+ * @returns {Promise} Success message
+ */
+export const unassignUser = async (projectId, userId) => {
+  const response = await api.delete(`/SuperAdmin/unassignUser/${projectId}/${userId}`);
   return response.data;
 };
 

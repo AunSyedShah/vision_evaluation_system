@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getAllProjects, deleteProject as apiDeleteProject } from '../../utils/api';
+import { getAllProjects, deleteProject as apiDeleteProject, getEvaluationsByProject } from '../../utils/api';
 import AssignEvaluatorsModal from '../../components/AssignEvaluatorsModal';
 
 const ProjectList = () => {
@@ -11,9 +11,11 @@ const ProjectList = () => {
   const [error, setError] = useState('');
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [evaluationsMap, setEvaluationsMap] = useState({}); // Store evaluation counts per project
 
   useEffect(() => {
     loadProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProjects = async () => {
@@ -21,8 +23,7 @@ const ProjectList = () => {
       setLoading(true);
       setError('');
       const data = await getAllProjects();
-      console.log('API Response:', data); // Debug: Check response structure
-      console.log('Is Array?', Array.isArray(data)); // Debug: Check if array
+      console.log('📋 API Response:', data);
       
       // Handle both direct array and wrapped response
       let projectsArray = data;
@@ -34,14 +35,51 @@ const ProjectList = () => {
         projectsArray = [];
       }
       
-      console.log('Projects Array:', projectsArray); // Debug: Check final array
+      console.log('📋 Projects Array:', projectsArray);
       setProjects(projectsArray);
+      
+      // Load evaluation counts for each project
+      await loadEvaluationsCounts(projectsArray);
     } catch (err) {
-      console.error('Failed to load projects:', err);
+      console.error('❌ Failed to load projects:', err);
       setError(err.response?.data?.message || 'Failed to load projects. Please try again.');
-      setProjects([]); // Set empty array on error
+      setProjects([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEvaluationsCounts = async (projectsList) => {
+    try {
+      const countsMap = {};
+      
+      // Fetch evaluations for each project
+      await Promise.all(
+        projectsList.map(async (project) => {
+          const projectId = project.Id || project.id;
+          if (projectId) {
+            try {
+              const evaluations = await getEvaluationsByProject(projectId);
+              let evalArray = evaluations;
+              
+              // Handle $values wrapper
+              if (evaluations && evaluations.$values) {
+                evalArray = evaluations.$values;
+              }
+              
+              countsMap[projectId] = Array.isArray(evalArray) ? evalArray.length : 0;
+            } catch {
+              console.log(`ℹ️ No evaluations for project ${projectId}`);
+              countsMap[projectId] = 0;
+            }
+          }
+        })
+      );
+      
+      console.log('📊 Evaluations map:', countsMap);
+      setEvaluationsMap(countsMap);
+    } catch (error) {
+      console.error('❌ Failed to load evaluations counts:', error);
     }
   };
 
@@ -71,11 +109,16 @@ const ProjectList = () => {
     loadProjects(); // Reload projects after assignment
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.startupName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.startupDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.founderName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = projects.filter(project => {
+    const startupName = (project.StartupName || project.startupName || '').toLowerCase();
+    const description = (project.StartupDescription || project.startupDescription || '').toLowerCase();
+    const founderName = (project.FounderName || project.founderName || '').toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    
+    return startupName.includes(searchLower) || 
+           description.includes(searchLower) || 
+           founderName.includes(searchLower);
+  });
 
   if (loading) {
     return (
@@ -169,32 +212,98 @@ const ProjectList = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProjects.map((project) => {
+                const projectId = project.Id || project.id;
+                const startupName = project.StartupName || project.startupName || 'Untitled';
+                const founderName = project.FounderName || project.founderName || 'N/A';
+                const description = project.StartupDescription || project.startupDescription || 'No description';
+                const status = project.StartupStatus || project.startupStatus || '';
+                const evaluationCount = evaluationsMap[projectId] || 0;
+
+                // Get status badge color
+                const getStatusBadge = () => {
+                  if (!status || status.trim() === '') {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700">
+                        Not Specified
+                      </span>
+                    );
+                  }
+                  
+                  const statusLower = status.toLowerCase();
+                  if (statusLower.includes('idea')) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                        {status}
+                      </span>
+                    );
+                  } else if (statusLower.includes('early') || statusLower.includes('prototype')) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {status}
+                      </span>
+                    );
+                  } else if (statusLower.includes('established') || statusLower.includes('growth')) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {status}
+                      </span>
+                    );
+                  } else {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                        {status}
+                      </span>
+                    );
+                  }
+                };
+
+                // Get evaluation badge
+                const getEvaluationBadge = () => {
+                  if (evaluationCount === 0) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        ⏳ Pending
+                      </span>
+                    );
+                  } else if (evaluationCount === 1) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        📝 1 Evaluation
+                      </span>
+                    );
+                  } else {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        ✅ {evaluationCount} Evaluations
+                      </span>
+                    );
+                  }
+                };
+
                 return (
-                  <tr key={project.id} className="hover:bg-gray-50 transition duration-150">
+                  <tr key={projectId} className="hover:bg-gray-50 transition duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{project.startupName || 'Untitled'}</div>
-                      <div className="text-xs text-gray-500">{project.founderName || 'N/A'}</div>
+                      <div className="text-sm font-medium text-gray-900">{startupName}</div>
+                      <div className="text-xs text-gray-500">{founderName}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 max-w-xs truncate">{project.startupDescription || 'No description'}</div>
+                      <div className="text-sm text-gray-600 max-w-xs truncate">{description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{project.startupStatus || 'N/A'}</div>
+                      {getStatusBadge()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Active
-                      </span>
+                      {getEvaluationBadge()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <Link
-                        to={`/superadmin/projects/${project.id}`}
+                        to={`/superadmin/projects/${projectId}`}
                         className="text-[#ab509d] hover:text-[#964a8a]"
                       >
                         View
                       </Link>
                       <Link
-                        to={`/superadmin/projects/edit/${project.id}`}
+                        to={`/superadmin/projects/edit/${projectId}`}
                         className="text-[#ab509d] hover:text-[#964a8a]"
                       >
                         Edit
@@ -207,7 +316,7 @@ const ProjectList = () => {
                         Assign
                       </button>
                       <button
-                        onClick={() => handleDelete(project.id)}
+                        onClick={() => handleDelete(projectId)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete

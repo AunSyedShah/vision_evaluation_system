@@ -5,7 +5,8 @@ import {
   getProjectById,
   getAllEvaluators,
   assignProjectToEvaluators,
-  getEvaluationsByProject
+  getEvaluationsByProject,
+  getAssignedUsers
 } from '../../utils/api';
 
 const ProjectDetail = () => {
@@ -15,6 +16,7 @@ const ProjectDetail = () => {
   const [evaluators, setEvaluators] = useState([]);
   const [selectedEvaluators, setSelectedEvaluators] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [assignedEvaluatorsCount, setAssignedEvaluatorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -71,6 +73,38 @@ const ProjectDetail = () => {
         projectEvaluations = projectEvaluations.$values;
       }
       setEvaluations(Array.isArray(projectEvaluations) ? projectEvaluations : []);
+      
+      // Fetch assigned evaluators count
+      try {
+        const assignedUsersResponse = await getAssignedUsers(parseInt(id));
+        console.log('Assigned users response:', assignedUsersResponse);
+        
+        // Extract assignedUsers from response
+        let assignedUsersData = assignedUsersResponse;
+        if (assignedUsersResponse && assignedUsersResponse.assignedUsers) {
+          assignedUsersData = assignedUsersResponse.assignedUsers;
+        } else if (assignedUsersResponse && assignedUsersResponse.AssignedUsers) {
+          assignedUsersData = assignedUsersResponse.AssignedUsers;
+        }
+        
+        // Handle .NET $values format
+        if (assignedUsersData && assignedUsersData.$values) {
+          assignedUsersData = assignedUsersData.$values;
+        }
+        
+        // Count assigned users
+        if (Array.isArray(assignedUsersData)) {
+          setAssignedEvaluatorsCount(assignedUsersData.length);
+          console.log(`✅ Assigned evaluators count: ${assignedUsersData.length}`);
+        }
+      } catch {
+        console.log('⚠️ Could not fetch assigned users, using fallback');
+        // Fallback: count unique evaluators from submitted evaluations
+        const uniqueEvaluators = new Set(
+          Array.isArray(projectEvaluations) ? projectEvaluations.map(e => e.UserId || e.userId).filter(Boolean) : []
+        );
+        setAssignedEvaluatorsCount(uniqueEvaluators.size);
+      }
       
     } catch (err) {
       console.error('Failed to load project data:', err);
@@ -190,7 +224,7 @@ const ProjectDetail = () => {
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              📊 Results ({evaluations.length})
+              📊 Results ({evaluations.length}/{assignedEvaluatorsCount})
             </button>
           </nav>
         </div>
@@ -252,103 +286,109 @@ const ProjectDetail = () => {
               <div className="mt-8 pt-6 border-t border-gray-200 space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">📁 Project Media</h3>
 
-                {/* Startup Logo */}
-                {(project.StartupLogo || project.startupLogo) && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">🏢 Startup Logo</label>
-                    <img 
-                      src={`http://localhost:5063${project.StartupLogo || project.startupLogo}`} 
-                      alt="Startup Logo" 
-                      className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
-                      onError={(e) => { e.target.src = '/vision_logo.png'; }}
-                    />
-                  </div>
-                )}
-
-                {/* Founder Photo */}
-                {(project.FounderPhoto || project.founderPhoto) && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">👤 Founder Photo</label>
-                    <img 
-                      src={`http://localhost:5063${project.FounderPhoto || project.founderPhoto}`} 
-                      alt="Founder Photo" 
-                      className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  </div>
-                )}
-
-                {/* Default Video */}
-                {(project.DefaultVideo || project.defaultVideo) && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">🎥 Default Video</label>
-                    <video 
-                      controls 
-                      className="max-w-2xl rounded-lg shadow-md border border-gray-300"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    >
-                      <source src={`http://localhost:5063${project.DefaultVideo || project.defaultVideo}`} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                )}
-
-                {/* Pitch Video */}
-                {(project.PitchVideo || project.pitchVideo) && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">🎬 Pitch Video</label>
-                    <video 
-                      controls 
-                      className="max-w-2xl rounded-lg shadow-md border border-gray-300"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    >
-                      <source src={`http://localhost:5063${project.PitchVideo || project.pitchVideo}`} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                )}
-
-                {/* Project Images */}
-                {((project.Image1 || project.image1) || (project.Image2 || project.image2) || (project.Image3 || project.image3)) && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">📸 Project Images</label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {(project.Image1 || project.image1) && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Image 1</p>
-                          <img 
-                            src={`http://localhost:5063${project.Image1 || project.image1}`} 
-                            alt="Project Image 1" 
-                            className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        </div>
-                      )}
-                      {(project.Image2 || project.image2) && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Image 2</p>
-                          <img 
-                            src={`http://localhost:5063${project.Image2 || project.image2}`} 
-                            alt="Project Image 2" 
-                            className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        </div>
-                      )}
-                      {(project.Image3 || project.image3) && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Image 3</p>
-                          <img 
-                            src={`http://localhost:5063${project.Image3 || project.image3}`} 
-                            alt="Project Image 3" 
-                            className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        </div>
-                      )}
+                {/* Images Section - All images grouped together */}
+                <div className="space-y-6">
+                  {/* Startup Logo */}
+                  {(project.StartupLogo || project.startupLogo) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🏢 Startup Logo</label>
+                      <img 
+                        src={`http://localhost:5063${project.StartupLogo || project.startupLogo}`} 
+                        alt="Startup Logo" 
+                        className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
+                        onError={(e) => { e.target.src = '/vision_logo.png'; }}
+                      />
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* Founder Photo */}
+                  {(project.FounderPhoto || project.founderPhoto) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">👤 Founder Photo</label>
+                      <img 
+                        src={`http://localhost:5063${project.FounderPhoto || project.founderPhoto}`} 
+                        alt="Founder Photo" 
+                        className="max-w-xs rounded-lg shadow-md border border-gray-300 bg-white"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Project Images */}
+                  {((project.Image1 || project.image1) || (project.Image2 || project.image2) || (project.Image3 || project.image3)) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">📸 Project Images</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {(project.Image1 || project.image1) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 1</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image1 || project.image1}`} 
+                              alt="Project Image 1" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        {(project.Image2 || project.image2) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 2</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image2 || project.image2}`} 
+                              alt="Project Image 2" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        {(project.Image3 || project.image3) && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Image 3</p>
+                            <img 
+                              src={`http://localhost:5063${project.Image3 || project.image3}`} 
+                              alt="Project Image 3" 
+                              className="w-full rounded-lg shadow-md border border-gray-300 bg-white"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Videos Section - All videos grouped together at the bottom */}
+                <div className="space-y-6">
+                  {/* Default Video */}
+                  {(project.DefaultVideo || project.defaultVideo) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🎥 Default Video</label>
+                      <video 
+                        controls 
+                        className="max-w-2xl rounded-lg shadow-md border border-gray-300"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      >
+                        <source src={`http://localhost:5063${project.DefaultVideo || project.defaultVideo}`} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  )}
+
+                  {/* Pitch Video */}
+                  {(project.PitchVideo || project.pitchVideo) && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🎬 Pitch Video</label>
+                      <video 
+                        controls 
+                        className="max-w-2xl rounded-lg shadow-md border border-gray-300"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      >
+                        <source src={`http://localhost:5063${project.PitchVideo || project.pitchVideo}`} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-6 border-t border-gray-200">
@@ -428,14 +468,26 @@ const ProjectDetail = () => {
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Evaluation Results</h3>
-                <p className="text-sm text-gray-600">View all submitted evaluations for this project</p>
+                <p className="text-sm text-gray-600">
+                  {evaluations.length} of {assignedEvaluatorsCount} evaluators have submitted
+                  {assignedEvaluatorsCount > 0 && evaluations.length === assignedEvaluatorsCount && (
+                    <span className="ml-2 text-green-600 font-medium">✓ All Complete</span>
+                  )}
+                  {assignedEvaluatorsCount > 0 && evaluations.length < assignedEvaluatorsCount && (
+                    <span className="ml-2 text-orange-600 font-medium">⏳ {assignedEvaluatorsCount - evaluations.length} Pending</span>
+                  )}
+                </p>
               </div>
 
               {evaluations.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <div className="text-4xl mb-3">📊</div>
                   <p className="text-gray-600 font-medium">No evaluations submitted yet</p>
-                  <p className="text-sm text-gray-500 mt-1">Results will appear once evaluators submit their assessments</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {assignedEvaluatorsCount > 0 
+                      ? `Waiting for ${assignedEvaluatorsCount} evaluator${assignedEvaluatorsCount !== 1 ? 's' : ''} to submit` 
+                      : 'No evaluators assigned yet'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">

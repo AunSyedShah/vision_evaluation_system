@@ -23,6 +23,9 @@ const SuperAdminDashboard = () => {
       let projects = await getAllProjects();
       let evaluators = await getAllEvaluators();
       
+      console.log('📊 Dashboard - Projects (raw):', projects);
+      console.log('📊 Dashboard - Evaluators (raw):', evaluators);
+      
       // Handle .NET ReferenceHandler.Preserve format
       if (projects && projects.$values) projects = projects.$values;
       if (evaluators && evaluators.$values) evaluators = evaluators.$values;
@@ -31,17 +34,39 @@ const SuperAdminDashboard = () => {
       projects = Array.isArray(projects) ? projects : [];
       evaluators = Array.isArray(evaluators) ? evaluators : [];
       
+      console.log('📊 Dashboard - Projects count:', projects.length);
+      console.log('📊 Dashboard - Evaluators count:', evaluators.length);
+      
       // Fetch evaluations for each project
       let totalEvaluations = 0;
       for (const project of projects) {
         try {
-          const evaluations = await getEvaluationsByProject(project.id);
-          totalEvaluations += evaluations.length;
-        } catch {
+          // Handle both PascalCase and camelCase
+          const projectId = project.id || project.Id;
+          let evaluations = await getEvaluationsByProject(projectId);
+          
+          console.log(`📊 Evaluations for project ${projectId} (raw):`, evaluations);
+          
+          // Handle .NET ReferenceHandler.Preserve format
+          if (evaluations && evaluations.$values) {
+            evaluations = evaluations.$values;
+          }
+          
+          // Ensure it's an array and count
+          if (Array.isArray(evaluations)) {
+            console.log(`✅ Project ${projectId}: ${evaluations.length} evaluations`);
+            totalEvaluations += evaluations.length;
+          } else {
+            console.log(`⚠️ Project ${projectId}: evaluations is not an array`, evaluations);
+          }
+        } catch (err) {
           // Project may have no evaluations yet
-          console.log(`No evaluations for project ${project.id}`);
+          const projectId = project.id || project.Id;
+          console.log(`ℹ️ No evaluations for project ${projectId}:`, err.message);
         }
       }
+      
+      console.log('📊 Total evaluations calculated:', totalEvaluations);
       
       // Note: Pending evaluations would require assignment data from backend
       // For now, we'll show 0 or remove this stat
@@ -51,6 +76,13 @@ const SuperAdminDashboard = () => {
         totalEvaluators: evaluators.length,
         totalEvaluations: totalEvaluations,
         pendingEvaluations: 0 // Would need backend endpoint for ProjectAssignments
+      });
+      
+      console.log('📊 Final stats:', {
+        totalProjects: projects.length,
+        totalEvaluators: evaluators.length,
+        totalEvaluations: totalEvaluations,
+        pendingEvaluations: 0
       });
     } catch (err) {
       console.error('Failed to load dashboard stats:', err);

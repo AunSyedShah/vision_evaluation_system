@@ -60,17 +60,18 @@ const ProjectForm = () => {
       setLoading(true);
       const project = await getProjectById(parseInt(id));
       if (project) {
+        // Handle both PascalCase (backend) and camelCase (frontend)
         formik.setValues({
-          username: project.username || '',
-          startupName: project.startupName || '',
-          founderName: project.founderName || '',
-          email: project.email || '',
-          phone: project.phone || '',
-          websiteLink: project.websiteLink || '',
-          mobileAppLink: project.mobileAppLink || '',
-          startupDescription: project.startupDescription || '',
-          startupStatus: project.startupStatus || '',
-          spotlightReason: project.spotlightReason || '',
+          username: project.Username || project.username || '',
+          startupName: project.StartupName || project.startupName || '',
+          founderName: project.FounderName || project.founderName || '',
+          email: project.Email || project.email || '',
+          phone: project.Phone || project.phone || '',
+          websiteLink: project.WebsiteLink || project.websiteLink || '',
+          mobileAppLink: project.MobileAppLink || project.mobileAppLink || '',
+          startupDescription: project.StartupDescription || project.startupDescription || '',
+          startupStatus: project.StartupStatus || project.startupStatus || '',
+          spotlightReason: project.SpotlightReason || project.spotlightReason || '',
           startupLogo: null,
           founderPhoto: null,
           defaultVideo: null,
@@ -295,7 +296,7 @@ const ProjectForm = () => {
             {/* Website Link */}
             <div>
               <label htmlFor="websiteLink" className="block text-sm font-medium text-gray-700 mb-2">
-                Website Link
+                Website Link <span className="text-gray-400 text-xs">(Optional)</span>
               </label>
               <input
                 id="websiteLink"
@@ -305,14 +306,14 @@ const ProjectForm = () => {
                 onBlur={formik.handleBlur}
                 value={formik.values.websiteLink}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
-                placeholder="https://example.com"
+                placeholder="https://example.com (optional)"
               />
             </div>
 
             {/* Mobile App Link */}
             <div>
               <label htmlFor="mobileAppLink" className="block text-sm font-medium text-gray-700 mb-2">
-                Mobile App Link
+                Mobile App Link <span className="text-gray-400 text-xs">(Optional)</span>
               </label>
               <input
                 id="mobileAppLink"
@@ -322,7 +323,7 @@ const ProjectForm = () => {
                 onBlur={formik.handleBlur}
                 value={formik.values.mobileAppLink}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
-                placeholder="https://app.example.com"
+                placeholder="https://app.example.com (optional)"
               />
             </div>
 
@@ -340,10 +341,13 @@ const ProjectForm = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
               >
                 <option value="">Select status</option>
-                <option value="Active">Idea Stage</option>
-                <option value="Inactive">Early Stage</option>
-                <option value="Pending">Established</option>
-                <option value="Completed">Growth Stage</option>
+                <option value="Idea Stage">Idea Stage</option>
+                <option value="Prototype">Prototype</option>
+                <option value="MVP">MVP (Minimum Viable Product)</option>
+                <option value="Early Revenue">Early Revenue</option>
+                <option value="Growth Stage">Growth Stage</option>
+                <option value="Scaling">Scaling</option>
+                <option value="Established">Established</option>
               </select>
             </div>
 

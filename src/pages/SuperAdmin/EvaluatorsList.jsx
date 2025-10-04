@@ -16,13 +16,36 @@ const EvaluatorsList = () => {
       setError('');
       let data = await getAllEvaluators();
       
+      console.log('Raw API Response:', data); // Debug
+      
       // Handle .NET ReferenceHandler.Preserve format
+      // The response structure is: { "$id": "1", "$values": [...] }
       if (data && data.$values) {
         data = data.$values;
       }
       
-      // Ensure array
-      setEvaluators(Array.isArray(data) ? data : []);
+      console.log('After $values extraction:', data); // Debug
+      
+      // Now the API returns a clean array structure - just normalize field names
+      const normalizedData = Array.isArray(data) 
+        ? data.map((evaluator) => {
+            console.log('Processing Evaluator:', evaluator); // Debug
+            
+            // Handle both PascalCase and camelCase field names
+            return {
+              userId: evaluator.userId || evaluator.UserId,
+              username: evaluator.username || evaluator.Username || 'N/A',
+              email: evaluator.email || evaluator.Email || 'N/A',
+              isOtpVerified: evaluator.isOtpVerified ?? evaluator.IsOtpVerified ?? false,
+              roleName: evaluator.roleName || evaluator.RoleName || 'User',
+            };
+          })
+        : [];
+      
+      console.log('Total Users Found:', normalizedData.length); // Debug
+      console.log('Normalized Evaluators:', normalizedData); // Debug
+      
+      setEvaluators(normalizedData);
     } catch (err) {
       console.error('Failed to load evaluators:', err);
       setError('Failed to load evaluators. Please try again.');
@@ -83,17 +106,17 @@ const EvaluatorsList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {evaluators.map((evaluator) => (
-                <tr key={evaluator.userId} className="hover:bg-gray-50 transition duration-150">
+              {evaluators.map((evaluator, index) => (
+                <tr key={evaluator.userId || `evaluator-${index}`} className="hover:bg-gray-50 transition duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{evaluator.username}</div>
+                    <div className="text-sm font-medium text-gray-900">{evaluator.username || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{evaluator.email}</div>
+                    <div className="text-sm text-gray-600">{evaluator.email || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                      #{evaluator.userId}
+                      #{evaluator.userId || 'N/A'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -65,12 +65,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           </svg>
         </button>
 
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <img src="/vision_logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-            <h1 className="text-2xl font-bold">PES</h1>
-          </div>
-          <p className="text-xs text-gray-300 mt-1">Project Evaluation System</p>
+        <div className="mb-8 flex justify-center">
+          <img src="/vision_logo.png" alt="Vision Logo" className="h-20 w-20 object-contain" />
         </div>
         
         <nav className="space-y-2">
