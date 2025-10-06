@@ -107,16 +107,8 @@ const EvaluatorProjectDetail = () => {
         }
       });
       
-      // Validate text fields (only check if not empty)
-      if (!values.strengths || values.strengths.trim().length === 0) {
-        errors.strengths = 'Please provide your feedback';
-      }
-      if (!values.weaknesses || values.weaknesses.trim().length === 0) {
-        errors.weaknesses = 'Please provide your feedback';
-      }
-      if (!values.recommendation || values.recommendation.trim().length === 0) {
-        errors.recommendation = 'Please provide your recommendation';
-      }
+      // Removed validation for detailed feedback fields - allow null submissions
+      // Evaluators can optionally provide strengths, weaknesses, and recommendations
       
       return errors;
     },
@@ -133,9 +125,9 @@ const EvaluatorProjectDetail = () => {
           businessModel: Number(values.businessModel),
           teamExecution: Number(values.teamExecution),
           ethicsEquity: Number(values.ethicsEquity),
-          strengths: values.strengths.trim(),
-          weaknesses: values.weaknesses.trim(),
-          recommendation: values.recommendation.trim()
+          strengths: values.strengths ? values.strengths.trim() : '',
+          weaknesses: values.weaknesses ? values.weaknesses.trim() : '',
+          recommendation: values.recommendation ? values.recommendation.trim() : ''
         };
 
         // Use updateEvaluation if already exists, otherwise submitEvaluation
@@ -543,7 +535,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="problemSignificance"
@@ -552,7 +544,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('problemSignificance', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('problemSignificance', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.problemSignificance === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -575,7 +573,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="innovationTechnical"
@@ -584,7 +582,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('innovationTechnical', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('innovationTechnical', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.innovationTechnical === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -604,7 +608,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="marketScalability"
@@ -613,7 +617,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('marketScalability', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('marketScalability', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.marketScalability === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -633,7 +643,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="tractionImpact"
@@ -642,7 +652,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('tractionImpact', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('tractionImpact', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.tractionImpact === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -662,7 +678,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="businessModel"
@@ -671,7 +687,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('businessModel', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('businessModel', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.businessModel === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -691,7 +713,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="teamExecution"
@@ -700,7 +722,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('teamExecution', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('teamExecution', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.teamExecution === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -720,7 +748,7 @@ const EvaluatorProjectDetail = () => {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <label key={score} className="inline-flex items-center">
+                      <label key={score} className="inline-flex items-center" onClick={(e) => e.preventDefault()}>
                         <input
                           type="radio"
                           name="ethicsEquity"
@@ -729,7 +757,13 @@ const EvaluatorProjectDetail = () => {
                           onChange={() => formik.setFieldValue('ethicsEquity', score)}
                           className="sr-only peer"
                         />
-                        <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
+                        <span 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            formik.setFieldValue('ethicsEquity', score);
+                          }}
+                          className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
                           hover:border-[#ab509d]
                           ${formik.values.ethicsEquity === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
@@ -768,7 +802,7 @@ const EvaluatorProjectDetail = () => {
 
                 <div>
                   <label htmlFor="strengths" className="block text-sm font-medium text-gray-700 mb-2">
-                    💪 Key Strengths *
+                    💪 Key Strengths (Optional)
                   </label>
                   <textarea
                     id="strengths"
@@ -787,7 +821,7 @@ const EvaluatorProjectDetail = () => {
 
                 <div>
                   <label htmlFor="weaknesses" className="block text-sm font-medium text-gray-700 mb-2">
-                    ⚠️ Areas for Improvement *
+                    ⚠️ Areas for Improvement (Optional)
                   </label>
                   <textarea
                     id="weaknesses"
@@ -806,7 +840,7 @@ const EvaluatorProjectDetail = () => {
 
                 <div>
                   <label htmlFor="recommendation" className="block text-sm font-medium text-gray-700 mb-2">
-                    🎯 Overall Recommendation *
+                    🎯 Overall Recommendation (Optional)
                   </label>
                   <textarea
                     id="recommendation"
