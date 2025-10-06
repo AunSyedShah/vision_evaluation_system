@@ -154,21 +154,30 @@ const AllResults = () => {
     return evaluator ? (evaluator.username || evaluator.Username || 'Unknown') : 'Unknown Evaluator';
   };
 
-  // Calculate average score from 7 evaluation metrics (1-10 scale)
-  const calculateAverageScore = (evaluation) => {
-    const scores = [
-      evaluation.ProblemSignificance || evaluation.problemSignificance || 0,
-      evaluation.InnovationTechnical || evaluation.innovationTechnical || 0,
-      evaluation.MarketScalability || evaluation.marketScalability || 0,
-      evaluation.TractionImpact || evaluation.tractionImpact || 0,
-      evaluation.BusinessModel || evaluation.businessModel || 0,
-      evaluation.TeamExecution || evaluation.teamExecution || 0,
-      evaluation.EthicsEquity || evaluation.ethicsEquity || 0
-    ];
-    const sum = scores.reduce((a, b) => a + b, 0);
-    const avg = sum / 7;
+  // Calculate weighted score using official criteria weights
+  // Problem(20%) + Innovation(20%) + Market(20%) + Traction(15%) + Business(10%) + Team(10%) + Ethics(5%)
+  const calculateWeightedScore = (evaluation) => {
+    const problemScore = evaluation.ProblemSignificance || evaluation.problemSignificance || 0;
+    const innovationScore = evaluation.InnovationTechnical || evaluation.innovationTechnical || 0;
+    const marketScore = evaluation.MarketScalability || evaluation.marketScalability || 0;
+    const tractionScore = evaluation.TractionImpact || evaluation.tractionImpact || 0;
+    const businessScore = evaluation.BusinessModel || evaluation.businessModel || 0;
+    const teamScore = evaluation.TeamExecution || evaluation.teamExecution || 0;
+    const ethicsScore = evaluation.EthicsEquity || evaluation.ethicsEquity || 0;
+    
+    // Calculate weighted score (out of 10)
+    const weightedScore = (
+      (problemScore * 0.20) +
+      (innovationScore * 0.20) +
+      (marketScore * 0.20) +
+      (tractionScore * 0.15) +
+      (businessScore * 0.10) +
+      (teamScore * 0.10) +
+      (ethicsScore * 0.05)
+    );
+    
     // Convert to percentage (out of 100)
-    return (avg / 10) * 100;
+    return (weightedScore / 10) * 100;
   };
 
   const getScoreColor = (score) => {
@@ -187,10 +196,10 @@ const AllResults = () => {
     return { text: 'Poor', color: 'bg-red-100 text-red-800' };
   };
 
-  // Calculate average score for all evaluations of a project
+  // Calculate weighted average score for all evaluations of a project
   const getProjectAverageScore = (evaluations) => {
     if (evaluations.length === 0) return 0;
-    const sum = evaluations.reduce((total, e) => total + calculateAverageScore(e), 0);
+    const sum = evaluations.reduce((total, e) => total + calculateWeightedScore(e), 0);
     return sum / evaluations.length;
   };
 
@@ -249,10 +258,11 @@ const AllResults = () => {
 
   const prepareAllResultsData = () => {
     const data = [];
-    filteredAndSortedProjects.forEach(({ project, evaluations }) => {
+    filteredAndSortedProjects.forEach(({ project, evaluations, assignedCount }) => {
       const projectName = project.StartupName || project.startupName || 'N/A';
       const founderName = project.FounderName || project.founderName || 'N/A';
       const status = project.Status || project.status || 'Pending Review';
+      const completionRate = assignedCount > 0 ? ((evaluations.length / assignedCount) * 100).toFixed(1) : 'N/A';
       
       evaluations.forEach((evaluation) => {
         // Find evaluator name - use same logic as getEvaluatorName
@@ -267,13 +277,16 @@ const AllResults = () => {
         
         console.log('📊 Export - Evaluator lookup:', { evaluatorId, evaluator, evaluatorName });
         
-        const avgScore = calculateAverageScore(evaluation).toFixed(1);
+        const avgScore = calculateWeightedScore(evaluation).toFixed(1);
         const badge = getScoreBadge(parseFloat(avgScore));
         
         data.push({
           'Project Name': projectName,
           'Founder Name': founderName,
           'Status': status,
+          'Expected Evaluators': assignedCount,
+          'Actual Evaluations': evaluations.length,
+          'Completion Rate': completionRate === 'N/A' ? 'N/A' : `${completionRate}%`,
           'Evaluator': evaluatorName,
           'Problem Significance': evaluation.ProblemSignificance || evaluation.problemSignificance || 0,
           'Innovation Technical': evaluation.InnovationTechnical || evaluation.innovationTechnical || 0,
@@ -282,7 +295,7 @@ const AllResults = () => {
           'Business Model': evaluation.BusinessModel || evaluation.businessModel || 0,
           'Team Execution': evaluation.TeamExecution || evaluation.teamExecution || 0,
           'Ethics Equity': evaluation.EthicsEquity || evaluation.ethicsEquity || 0,
-          'Average Score': avgScore,
+          'Weighted Score': avgScore,
           'Rating': badge.text,
           'Comments': evaluation.Comments || evaluation.comments || '',
           'Evaluated At': new Date(evaluation.EvaluatedAt || evaluation.evaluatedAt).toLocaleString()
@@ -301,6 +314,10 @@ const AllResults = () => {
       
       const avgScore = evaluations.length > 0 ? getProjectAverageScore(evaluations).toFixed(1) : 'N/A';
       const badge = evaluations.length > 0 ? getScoreBadge(parseFloat(avgScore)) : { text: 'N/A' };
+      const completionRate = assignedCount > 0 ? ((evaluations.length / assignedCount) * 100).toFixed(1) : 'N/A';
+      const completionStatus = assignedCount > 0 && evaluations.length === assignedCount ? 'Complete' : 
+                               assignedCount > 0 && evaluations.length > 0 ? 'Partial' : 
+                               assignedCount > 0 ? 'Pending' : 'Not Assigned';
       
       // Calculate metric averages if 2+ evaluations
       let metricAverages = null;
@@ -312,9 +329,11 @@ const AllResults = () => {
         'Project Name': projectName,
         'Founder Name': founderName,
         'Status': status,
-        'Assigned Evaluators': assignedCount,
-        'Submitted Evaluations': evaluations.length,
-        'Average Score': avgScore,
+        'Expected Evaluators': assignedCount,
+        'Actual Evaluations': evaluations.length,
+        'Completion Rate': completionRate === 'N/A' ? 'N/A' : `${completionRate}%`,
+        'Completion Status': completionStatus,
+        'Weighted Score': avgScore,
         'Rating': badge.text,
         'Avg Problem Significance': metricAverages ? metricAverages.problem : 'N/A',
         'Avg Innovation Technical': metricAverages ? metricAverages.innovation : 'N/A',
@@ -330,7 +349,7 @@ const AllResults = () => {
 
   const prepareConsensusData = () => {
     const data = [];
-    filteredAndSortedProjects.forEach(({ project, evaluations }) => {
+    filteredAndSortedProjects.forEach(({ project, evaluations, assignedCount }) => {
       if (evaluations.length < 2) return; // Skip projects with less than 2 evaluations
       
       const projectName = project.StartupName || project.startupName || 'N/A';
@@ -339,13 +358,16 @@ const AllResults = () => {
       const metricAverages = calculateMetricAverages(evaluations);
       const avgScore = getProjectAverageScore(evaluations).toFixed(1);
       const badge = getScoreBadge(parseFloat(avgScore));
+      const completionRate = assignedCount > 0 ? ((evaluations.length / assignedCount) * 100).toFixed(1) : 'N/A';
       
       data.push({
         'Project Name': projectName,
         'Founder Name': founderName,
         'Status': status,
-        'Number of Evaluators': evaluations.length,
-        'Consensus Avg Score': avgScore,
+        'Expected Evaluators': assignedCount,
+        'Actual Evaluators': evaluations.length,
+        'Completion Rate': completionRate === 'N/A' ? 'N/A' : `${completionRate}%`,
+        'Consensus Weighted Score': avgScore,
         'Rating': badge.text,
         'Consensus Problem Significance': metricAverages.problem,
         'Consensus Innovation Technical': metricAverages.innovation,
@@ -365,6 +387,34 @@ const AllResults = () => {
       alert('No data to export');
       return;
     }
+    
+    // Add overall summary row
+    const totalExpected = filteredAndSortedProjects.reduce((sum, {assignedCount}) => sum + assignedCount, 0);
+    const totalActual = filteredAndSortedProjects.reduce((sum, {evaluations}) => sum + evaluations.length, 0);
+    const overallCompletionRate = totalExpected > 0 ? ((totalActual / totalExpected) * 100).toFixed(1) : 'N/A';
+    
+    data.push({});
+    data.push({
+      'Project Name': '=== OVERALL SUMMARY ===',
+      'Founder Name': '',
+      'Status': '',
+      'Expected Evaluators': totalExpected,
+      'Actual Evaluations': totalActual,
+      'Completion Rate': overallCompletionRate === 'N/A' ? 'N/A' : `${overallCompletionRate}%`,
+      'Evaluator': `Total Projects: ${filteredAndSortedProjects.length}`,
+      'Problem Significance': '',
+      'Innovation Technical': '',
+      'Market Scalability': '',
+      'Traction Impact': '',
+      'Business Model': '',
+      'Team Execution': '',
+      'Ethics Equity': '',
+      'Weighted Score': '',
+      'Rating': '',
+      'Comments': '',
+      'Evaluated At': ''
+    });
+    
     const filename = `All_Evaluation_Results_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       exportToExcel(data, filename);
@@ -379,6 +429,41 @@ const AllResults = () => {
       alert('No data to export');
       return;
     }
+    
+    // Add overall summary row
+    const totalExpected = filteredAndSortedProjects.reduce((sum, {assignedCount}) => sum + assignedCount, 0);
+    const totalActual = filteredAndSortedProjects.reduce((sum, {evaluations}) => sum + evaluations.length, 0);
+    const overallCompletionRate = totalExpected > 0 ? ((totalActual / totalExpected) * 100).toFixed(1) : 'N/A';
+    const completeCount = filteredAndSortedProjects.filter(({evaluations, assignedCount}) => 
+      assignedCount > 0 && evaluations.length === assignedCount
+    ).length;
+    const partialCount = filteredAndSortedProjects.filter(({evaluations, assignedCount}) => 
+      assignedCount > 0 && evaluations.length > 0 && evaluations.length < assignedCount
+    ).length;
+    const pendingCount = filteredAndSortedProjects.filter(({evaluations, assignedCount}) => 
+      assignedCount > 0 && evaluations.length === 0
+    ).length;
+    
+    data.push({});
+    data.push({
+      'Project Name': '=== OVERALL SUMMARY ===',
+      'Founder Name': '',
+      'Status': `Complete: ${completeCount} | Partial: ${partialCount} | Pending: ${pendingCount}`,
+      'Expected Evaluators': totalExpected,
+      'Actual Evaluations': totalActual,
+      'Completion Rate': overallCompletionRate === 'N/A' ? 'N/A' : `${overallCompletionRate}%`,
+      'Completion Status': `Total Projects: ${filteredAndSortedProjects.length}`,
+      'Weighted Score': '',
+      'Rating': '',
+      'Avg Problem Significance': '',
+      'Avg Innovation Technical': '',
+      'Avg Market Scalability': '',
+      'Avg Traction Impact': '',
+      'Avg Business Model': '',
+      'Avg Team Execution': '',
+      'Avg Ethics Equity': ''
+    });
+    
     const filename = `Project_Summary_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       exportToExcel(data, filename);
@@ -393,6 +478,34 @@ const AllResults = () => {
       alert('No consensus data to export (need projects with 2+ evaluations)');
       return;
     }
+    
+    // Add overall summary row (only for projects with 2+ evaluations)
+    const consensusProjects = filteredAndSortedProjects.filter(({evaluations}) => evaluations.length >= 2);
+    const totalExpected = consensusProjects.reduce((sum, {assignedCount}) => sum + assignedCount, 0);
+    const totalActual = consensusProjects.reduce((sum, {evaluations}) => sum + evaluations.length, 0);
+    const overallCompletionRate = totalExpected > 0 ? ((totalActual / totalExpected) * 100).toFixed(1) : 'N/A';
+    const avgEvaluatorsPerProject = consensusProjects.length > 0 ? 
+      (totalActual / consensusProjects.length).toFixed(1) : 'N/A';
+    
+    data.push({});
+    data.push({
+      'Project Name': '=== OVERALL SUMMARY ===',
+      'Founder Name': '',
+      'Status': `Projects with Consensus: ${consensusProjects.length}`,
+      'Expected Evaluators': totalExpected,
+      'Actual Evaluators': totalActual,
+      'Completion Rate': overallCompletionRate === 'N/A' ? 'N/A' : `${overallCompletionRate}%`,
+      'Consensus Weighted Score': `Avg: ${avgEvaluatorsPerProject} evaluators/project`,
+      'Rating': '',
+      'Consensus Problem Significance': '',
+      'Consensus Innovation Technical': '',
+      'Consensus Market Scalability': '',
+      'Consensus Traction Impact': '',
+      'Consensus Business Model': '',
+      'Consensus Team Execution': '',
+      'Consensus Ethics Equity': ''
+    });
+    
     const filename = `Consensus_Results_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       exportToExcel(data, filename);
@@ -444,12 +557,12 @@ const AllResults = () => {
     totalProjects: projectsWithEvaluations.length,
     totalEvaluations: allEvaluations.length,
     projectsWithEvals: projectsWithEvaluations.filter(p => p.evaluations.length > 0).length,
-    excellent: allEvaluations.filter(e => calculateAverageScore(e) >= 80).length,
-    good: allEvaluations.filter(e => calculateAverageScore(e) >= 60 && calculateAverageScore(e) < 80).length,
-    average: allEvaluations.filter(e => calculateAverageScore(e) >= 40 && calculateAverageScore(e) < 60).length,
-    poor: allEvaluations.filter(e => calculateAverageScore(e) < 40).length,
+    excellent: allEvaluations.filter(e => calculateWeightedScore(e) >= 80).length,
+    good: allEvaluations.filter(e => calculateWeightedScore(e) >= 60 && calculateWeightedScore(e) < 80).length,
+    average: allEvaluations.filter(e => calculateWeightedScore(e) >= 40 && calculateWeightedScore(e) < 60).length,
+    poor: allEvaluations.filter(e => calculateWeightedScore(e) < 40).length,
     avgScore: allEvaluations.length > 0 
-      ? (allEvaluations.reduce((sum, e) => sum + calculateAverageScore(e), 0) / allEvaluations.length).toFixed(1)
+      ? (allEvaluations.reduce((sum, e) => sum + calculateWeightedScore(e), 0) / allEvaluations.length).toFixed(1)
       : 0
   };
 
@@ -559,7 +672,7 @@ const AllResults = () => {
             >
               <option value="projectName">Project Name</option>
               <option value="evaluationCount">Evaluation Count</option>
-              <option value="avgScore">Average Score</option>
+              <option value="avgScore">Weighted Score</option>
             </select>
           </div>
         </div>
@@ -769,7 +882,7 @@ const AllResults = () => {
                           <div className={`text-2xl font-bold ${getScoreColor(avgScore)}`}>
                             {avgScore.toFixed(1)}%
                           </div>
-                          <div className="text-xs text-gray-600">Avg Score</div>
+                          <div className="text-xs text-gray-600">Weighted Score</div>
                         </div>
                       )}
 
@@ -843,7 +956,7 @@ const AllResults = () => {
                         {evaluations.map((evaluation) => {
                           const evaluationId = evaluation.EvaluationId || evaluation.evaluationId;
                           const userId = evaluation.UserId || evaluation.userId;
-                          const avgScore = calculateAverageScore(evaluation);
+                          const avgScore = calculateWeightedScore(evaluation);
                           const evaluatedAt = evaluation.EvaluatedAt || evaluation.evaluatedAt;
                           
                           const problemScore = evaluation.ProblemSignificance || evaluation.problemSignificance || 0;

@@ -52,7 +52,9 @@ const MyEvaluations = () => {
     }
   };
 
-  const calculateTotalScore = (evaluation) => {
+  // Calculate weighted score using official criteria weights
+  // Problem(20%) + Innovation(20%) + Market(20%) + Traction(15%) + Business(10%) + Team(10%) + Ethics(5%)
+  const calculateWeightedScore = (evaluation) => {
     const problemSignificance = evaluation.ProblemSignificance || evaluation.problemSignificance || 0;
     const innovationTechnical = evaluation.InnovationTechnical || evaluation.innovationTechnical || 0;
     const marketScalability = evaluation.MarketScalability || evaluation.marketScalability || 0;
@@ -61,9 +63,15 @@ const MyEvaluations = () => {
     const teamExecution = evaluation.TeamExecution || evaluation.teamExecution || 0;
     const ethicsEquity = evaluation.EthicsEquity || evaluation.ethicsEquity || 0;
 
-    return Number(problemSignificance) + Number(innovationTechnical) + 
-           Number(marketScalability) + Number(tractionImpact) + 
-           Number(businessModel) + Number(teamExecution) + Number(ethicsEquity);
+    return (
+      (Number(problemSignificance) * 0.20) +
+      (Number(innovationTechnical) * 0.20) +
+      (Number(marketScalability) * 0.20) +
+      (Number(tractionImpact) * 0.15) +
+      (Number(businessModel) * 0.10) +
+      (Number(teamExecution) * 0.10) +
+      (Number(ethicsEquity) * 0.05)
+    ).toFixed(2);
   };
 
   if (loading) {
@@ -103,7 +111,7 @@ const MyEvaluations = () => {
             const project = evaluation.Project || evaluation.project;
             const startupName = project?.StartupName || project?.startupName || evaluation.StartupName || evaluation.startupName || 'Untitled Project';
             const evaluatedAt = evaluation.EvaluatedAt || evaluation.evaluatedAt;
-            const totalScore = calculateTotalScore(evaluation);
+            const weightedScore = calculateWeightedScore(evaluation);
 
             return (
               <div key={evaluationId} className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -124,8 +132,8 @@ const MyEvaluations = () => {
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-bold text-[#ab509d]">{totalScore} / 70</div>
-                      <p className="text-sm text-gray-500">Total Score</p>
+                      <div className="text-3xl font-bold text-[#ab509d]">{weightedScore} / 10.00</div>
+                      <p className="text-sm text-gray-500">Weighted Score</p>
                     </div>
                   </div>
 

@@ -202,10 +202,17 @@ export const loginUser = async (credentials) => {
 
 /**
  * Get all projects (FSO, SuperAdmin only)
- * @returns {Promise} Array of projects
+ * @param {number} [page] - Page number (optional, for pagination)
+ * @param {number} [pageSize] - Items per page (optional, for pagination)
+ * @returns {Promise} Array of projects or paginated response {data, totalCount, page, pageSize, totalPages}
  */
-export const getAllProjects = async () => {
-  const response = await api.get('/Projects');
+export const getAllProjects = async (page = null, pageSize = null) => {
+  const params = {};
+  if (page !== null && pageSize !== null) {
+    params.page = page;
+    params.pageSize = pageSize;
+  }
+  const response = await api.get('/Projects', { params });
   return response.data;
 };
 
@@ -258,19 +265,8 @@ export const deleteProject = async (id) => {
   return response.data;
 };
 
-/**
- * Bulk upload projects from CSV/Excel
- * @param {FormData} formData - File data
- * @returns {Promise} Upload result
- */
-export const bulkUploadProjects = async (formData) => {
-  const response = await api.post('/Projects/bulk-upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
-};
+// Bulk upload removed - not implemented in backend
+// If needed in future, implement POST /Projects/bulk-upload endpoint first
 
 // ============================================
 // SUPER ADMIN ENDPOINTS
@@ -278,10 +274,53 @@ export const bulkUploadProjects = async (formData) => {
 
 /**
  * Get all users with role "User" (evaluators)
- * @returns {Promise} Array of evaluators
+ * @param {number} [page] - Page number (optional, for pagination)
+ * @param {number} [pageSize] - Items per page (optional, for pagination)
+ * @returns {Promise} Array of evaluators or paginated response {data, totalCount, page, pageSize, totalPages}
  */
-export const getAllEvaluators = async () => {
-  const response = await api.get('/SuperAdmin/getAllUsers');
+export const getAllEvaluators = async (page = null, pageSize = null) => {
+  const params = {};
+  if (page !== null && pageSize !== null) {
+    params.page = page;
+    params.pageSize = pageSize;
+  }
+  const response = await api.get('/SuperAdmin/getAllUsers', { params });
+  return response.data;
+};
+
+/**
+ * Create evaluator internally (SuperAdmin only, no OTP verification)
+ * @param {object} evaluatorData - { username, email, designation, company, password }
+ * @returns {Promise} Created evaluator with password
+ */
+export const createEvaluatorInternal = async (evaluatorData) => {
+  const response = await api.post('/SuperAdmin/createEvaluator', {
+    Username: evaluatorData.username,
+    Email: evaluatorData.email,
+    Designation: evaluatorData.designation || null,
+    Company: evaluatorData.company || null,
+    Password: evaluatorData.password || null
+  });
+  return response.data;
+};
+
+/**
+ * Update evaluator details (SuperAdmin only)
+ * @param {number} userId - The ID of the evaluator to update
+ * @param {object} evaluatorData - { username, email, designation, company, password } (all optional)
+ * @returns {Promise} Updated evaluator data with passwordChanged flag
+ */
+export const updateEvaluatorInternal = async (userId, evaluatorData) => {
+  const requestData = {};
+  
+  // Only include fields that are provided (not undefined)
+  if (evaluatorData.username !== undefined) requestData.Username = evaluatorData.username;
+  if (evaluatorData.email !== undefined) requestData.Email = evaluatorData.email;
+  if (evaluatorData.designation !== undefined) requestData.Designation = evaluatorData.designation || null;
+  if (evaluatorData.company !== undefined) requestData.Company = evaluatorData.company || null;
+  if (evaluatorData.password !== undefined && evaluatorData.password) requestData.Password = evaluatorData.password;
+  
+  const response = await api.put(`/SuperAdmin/updateEvaluator/${userId}`, requestData);
   return response.data;
 };
 
@@ -374,10 +413,17 @@ export const submitEvaluation = async (projectId, evaluationData) => {
 
 /**
  * Get all evaluations submitted by current evaluator
- * @returns {Promise} Array of my evaluations
+ * @param {number} [page] - Page number (optional, for pagination)
+ * @param {number} [pageSize] - Items per page (optional, for pagination)
+ * @returns {Promise} Array of my evaluations or paginated response {data, totalCount, page, pageSize, totalPages}
  */
-export const getMyEvaluations = async () => {
-  const response = await api.get('/Evaluations/my');
+export const getMyEvaluations = async (page = null, pageSize = null) => {
+  const params = {};
+  if (page !== null && pageSize !== null) {
+    params.page = page;
+    params.pageSize = pageSize;
+  }
+  const response = await api.get('/Evaluations/my', { params });
   return response.data;
 };
 
@@ -393,24 +439,46 @@ export const getEvaluationsByProject = async (projectId) => {
 
 /**
  * Get all evaluations from all projects (SuperAdmin only)
- * Note: Backend doesn't have a dedicated endpoint for this yet.
- * You may need to fetch all projects and then get evaluations for each.
  * @returns {Promise} Array of all evaluations
  */
 export const getAllEvaluations = async () => {
-  // Backend doesn't have /api/Evaluations endpoint yet
-  // Workaround: Get all projects, then get evaluations for each
-  console.warn('No dedicated "get all evaluations" endpoint. Consider implementing in backend or fetching per project.');
+  const response = await api.get('/Evaluations');
+  return response.data;
+};
+
+/**
+ * Update an existing evaluation (Evaluator only)
+ * @param {number} projectId - Project ID
+ * @param {object} evaluationData - Evaluation data (camelCase)
+ * @returns {Promise} Update result
+ */
+export const updateEvaluation = async (projectId, evaluationData) => {
+  // Map frontend camelCase to backend PascalCase
+  const backendData = {
+    ProblemSignificance: evaluationData.problemSignificance,
+    InnovationTechnical: evaluationData.innovationTechnical,
+    MarketScalability: evaluationData.marketScalability,
+    TractionImpact: evaluationData.tractionImpact,
+    BusinessModel: evaluationData.businessModel,
+    TeamExecution: evaluationData.teamExecution,
+    EthicsEquity: evaluationData.ethicsEquity,
+    Strengths: evaluationData.strengths || '',
+    Weaknesses: evaluationData.weaknesses || '',
+    Recommendation: evaluationData.recommendation || ''
+  };
   
-  // Option 1: If you have project IDs, loop through them
-  // const projects = await getAllProjects();
-  // const allEvaluations = await Promise.all(
-  //   projects.map(p => getEvaluationsByProject(p.Id))
-  // );
-  // return allEvaluations.flat();
-  
-  // For now, throw error to remind to implement
-  throw new Error('getAllEvaluations requires backend endpoint implementation');
+  const response = await api.put(`/Evaluations/${projectId}`, backendData);
+  return response.data;
+};
+
+/**
+ * Get evaluation statistics for a project (SuperAdmin, FSO only)
+ * @param {number} projectId - Project ID
+ * @returns {Promise} Statistics object with averages and completion rate
+ */
+export const getEvaluationStatistics = async (projectId) => {
+  const response = await api.get(`/Evaluations/statistics/${projectId}`);
+  return response.data;
 };
 
 // ============================================

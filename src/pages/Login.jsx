@@ -310,15 +310,7 @@ const Login = () => {
             </div>
           </form>
 
-        {!showOtpForm && (
-          <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-100">
-            <p className="text-xs font-semibold text-[#ab509d] mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><span className="font-medium">Super Admin:</span> SuperAdmin / SuperAdmin@123</p>
-              <p><span className="font-medium">Admin (FSO):</span> FSO / FSO@123</p>
-            </div>
-          </div>
-        )}
+      
       </div>
     </div>
   );

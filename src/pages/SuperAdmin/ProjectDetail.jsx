@@ -1,10 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
 import { 
   getProjectById,
-  getAllEvaluators,
-  assignProjectToEvaluators,
   getEvaluationsByProject,
   getAssignedUsers
 } from '../../utils/api';
@@ -13,8 +10,6 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
-  const [evaluators, setEvaluators] = useState([]);
-  const [selectedEvaluators, setSelectedEvaluators] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [assignedEvaluatorsCount, setAssignedEvaluatorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -32,37 +27,6 @@ const ProjectDetail = () => {
       // Handle .NET ReferenceHandler.Preserve format (single object might have $id)
       // For single objects, no $values but may have $id
       setProject(projectData);
-      
-      // Fetch all evaluators
-      let allEvaluators = await getAllEvaluators();
-      console.log('All Evaluators:', allEvaluators); // Debug
-      
-      // Handle .NET ReferenceHandler.Preserve format
-      if (allEvaluators && allEvaluators.$values) {
-        allEvaluators = allEvaluators.$values;
-      }
-      
-      // Filter only verified evaluators with role "User"
-      const verifiedEvaluators = Array.isArray(allEvaluators)
-        ? allEvaluators.filter(user => {
-            // Handle Role as object or string
-            let roleName = '';
-            if (typeof user.role === 'object' && user.role !== null) {
-              roleName = user.role.roleName || user.role.RoleName || '';
-            } else if (typeof user.Role === 'object' && user.Role !== null) {
-              roleName = user.Role.roleName || user.Role.RoleName || '';
-            } else {
-              roleName = user.Role || user.role || user.RoleName || user.roleName || '';
-            }
-            
-            const isVerified = user.isOtpVerified || user.IsOtpVerified || false;
-            const isEvaluatorRole = roleName === 'User' || roleName === 'user' || roleName === 'Evaluator' || roleName === 'evaluator';
-            return isEvaluatorRole && isVerified;
-          })
-        : [];
-      
-      console.log('Verified Evaluators:', verifiedEvaluators); // Debug
-      setEvaluators(verifiedEvaluators);
       
       // Fetch evaluations for this project
       let projectEvaluations = await getEvaluationsByProject(parseInt(id));
@@ -118,28 +82,6 @@ const ProjectDetail = () => {
   useEffect(() => {
     loadProjectData();
   }, [loadProjectData]);
-
-  const handleEvaluatorToggle = (evaluatorId) => {
-    if (selectedEvaluators.includes(evaluatorId)) {
-      setSelectedEvaluators(selectedEvaluators.filter(id => id !== evaluatorId));
-    } else {
-      setSelectedEvaluators([...selectedEvaluators, evaluatorId]);
-    }
-  };
-
-  const handleAssignEvaluators = async () => {
-    try {
-      await assignProjectToEvaluators({
-        ProjectId: parseInt(id),
-        UserIds: selectedEvaluators
-      });
-      toast.success('Evaluators assigned successfully!');
-      loadProjectData();
-    } catch (err) {
-      console.error('Failed to assign evaluators:', err);
-      toast.error(err.response?.data?.message || 'Failed to assign evaluators.');
-    }
-  };
 
   if (loading) {
     return (
@@ -205,16 +147,6 @@ const ProjectDetail = () => {
               }`}
             >
               📋 Project Info
-            </button>
-            <button
-              onClick={() => setActiveTab('evaluators')}
-              className={`px-6 py-4 text-sm font-medium ${
-                activeTab === 'evaluators'
-                  ? 'border-b-2 border-[#ab509d] text-[#ab509d]'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              👥 Assign Evaluators
             </button>
             <button
               onClick={() => setActiveTab('results')}
@@ -402,67 +334,6 @@ const ProjectDetail = () => {
             </div>
           )}
 
-          {/* Evaluators Tab */}
-          {activeTab === 'evaluators' && (
-            <div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Assign Evaluators</h3>
-                <p className="text-sm text-gray-600">Select evaluators to assign to this project. You can select multiple evaluators.</p>
-                {selectedEvaluators.length > 0 && (
-                  <p className="text-sm text-[#ab509d] font-semibold mt-1">
-                    {selectedEvaluators.length} evaluator{selectedEvaluators.length !== 1 ? 's' : ''} selected
-                  </p>
-                )}
-              </div>
-
-              {evaluators.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-600">No evaluators available</p>
-                </div>
-              ) : (
-                <div className="space-y-3 mb-6">
-                  {evaluators.map((evaluator) => {
-                    const evaluatorId = evaluator.UserId || evaluator.userId;
-                    return (
-                    <div
-                      key={evaluatorId}
-                      className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition duration-150 ${
-                        selectedEvaluators.includes(evaluatorId)
-                          ? 'border-[#ab509d] bg-purple-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => handleEvaluatorToggle(evaluatorId)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedEvaluators.includes(evaluatorId)}
-                          onChange={() => {}}
-                          className="h-5 w-5 text-[#ab509d] rounded"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900">{evaluator.Username || evaluator.username}</p>
-                          <p className="text-sm text-gray-600">{evaluator.Email || evaluator.email}</p>
-                        </div>
-                      </div>
-                      {selectedEvaluators.includes(evaluatorId) && (
-                        <span className="text-[#ab509d] font-semibold">✓ Selected</span>
-                      )}
-                    </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <button
-                onClick={handleAssignEvaluators}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-[#ab509d] hover:bg-[#964a8a] text-white text-sm sm:text-base font-semibold rounded-lg shadow-md transition duration-150"
-              >
-                Save Assignment
-              </button>
-            </div>
-          )}
-
           {/* Results Tab */}
           {activeTab === 'results' && (
             <div>
@@ -492,14 +363,17 @@ const ProjectDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {evaluations.map((evaluation) => {
-                    const totalScore = 
-                      evaluation.problemSignificance +
-                      evaluation.innovationTechnical +
-                      evaluation.marketScalability +
-                      evaluation.tractionImpact +
-                      evaluation.businessModel +
-                      evaluation.teamExecution +
-                      evaluation.ethicsEquity;
+                    // Calculate weighted score using official criteria weights
+                    // Problem(20%) + Innovation(20%) + Market(20%) + Traction(15%) + Business(10%) + Team(10%) + Ethics(5%)
+                    const weightedScore = (
+                      (evaluation.problemSignificance * 0.20) +
+                      (evaluation.innovationTechnical * 0.20) +
+                      (evaluation.marketScalability * 0.20) +
+                      (evaluation.tractionImpact * 0.15) +
+                      (evaluation.businessModel * 0.10) +
+                      (evaluation.teamExecution * 0.10) +
+                      (evaluation.ethicsEquity * 0.05)
+                    ).toFixed(2);
                     
                     return (
                       <div key={evaluation.evaluationId} className="border border-gray-200 rounded-lg p-6">
@@ -518,11 +392,12 @@ const ProjectDetail = () => {
                         
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Total Score</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Weighted Score</label>
                             <div className="flex items-center gap-2">
-                              <div className="text-2xl font-bold text-[#ab509d]">{totalScore}</div>
-                              <div className="text-sm text-gray-500">/ 70</div>
+                              <div className="text-2xl font-bold text-[#ab509d]">{weightedScore}</div>
+                              <div className="text-sm text-gray-500">/ 10.00</div>
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">Based on official criteria weights</p>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-3 text-sm">

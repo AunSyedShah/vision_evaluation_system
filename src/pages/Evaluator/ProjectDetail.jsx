@@ -5,7 +5,8 @@ import toast from 'react-hot-toast';
 import { 
   getAssignedProjects,
   getMyEvaluations,
-  submitEvaluation
+  submitEvaluation,
+  updateEvaluation
 } from '../../utils/api';
 
 const EvaluatorProjectDetail = () => {
@@ -137,7 +138,12 @@ const EvaluatorProjectDetail = () => {
           recommendation: values.recommendation.trim()
         };
 
-        await submitEvaluation(id, evaluationData);
+        // Use updateEvaluation if already exists, otherwise submitEvaluation
+        if (existingEvaluation) {
+          await updateEvaluation(id, evaluationData);
+        } else {
+          await submitEvaluation(id, evaluationData);
+        }
         
         toast.success(existingEvaluation 
           ? 'Evaluation updated successfully!' 
@@ -423,9 +429,9 @@ const EvaluatorProjectDetail = () => {
           {activeTab === 'evaluate' && (
             <form onSubmit={formik.handleSubmit} className="space-y-8">
               {existingEvaluation && (
-                <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-                  <p className="font-semibold">✅ You have already submitted your evaluation for this project.</p>
-                  <p className="text-sm mt-1">Evaluations cannot be edited after submission. Your scores and feedback are shown below.</p>
+                <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+                  <p className="font-semibold">📝 Editing Your Evaluation</p>
+                  <p className="text-sm mt-1">You can update your scores and feedback anytime. Your changes will be saved when you click "Update Evaluation".</p>
                 </div>
               )}
 
@@ -433,7 +439,101 @@ const EvaluatorProjectDetail = () => {
               <div className="space-y-8">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">📊 Evaluation Scores (1-10)</h3>
-                  <p className="text-sm text-gray-600 mt-2">Rate each criterion from 1 (Poor) to 10 (Excellent)</p>
+                  <p className="text-sm text-gray-600 mt-2">Rate each criterion from 1 (Poor) to 10 (Excellent). Each criterion has a specific weight in the final evaluation.</p>
+                </div>
+
+                {/* Criteria Overview Card */}
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5 shadow-sm">
+                  <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span>⚖️</span>
+                    <span>Judging Criteria & Weightage</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Criterion 1 */}
+                    <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">1️⃣ Problem Significance & Clarity</h5>
+                        <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold">20%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Importance of the problem at national or sectoral level; clarity in defining target users and pain points.
+                      </p>
+                    </div>
+
+                    {/* Criterion 2 */}
+                    <div className="bg-white rounded-lg p-4 border border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">2️⃣ Innovation & Technical Merit</h5>
+                        <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">20%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Novelty of the solution, technical feasibility, quality of implementation or prototype.
+                      </p>
+                    </div>
+
+                    {/* Criterion 3 */}
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">3️⃣ Market Potential & Scalability</h5>
+                        <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">20%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Market size, go-to-market plan, ability to scale across regions or sectors.
+                      </p>
+                    </div>
+
+                    {/* Criterion 4 */}
+                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">4️⃣ Traction & Impact Evidence</h5>
+                        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">15%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Users/customers, pilot results, measurable impact (cost saved, time saved, lives helped).
+                      </p>
+                    </div>
+
+                    {/* Criterion 5 */}
+                    <div className="bg-white rounded-lg p-4 border border-amber-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">5️⃣ Business Model & Financial Viability</h5>
+                        <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold">10%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Revenue model, unit economics, defensibility and financial realism.
+                      </p>
+                    </div>
+
+                    {/* Criterion 6 */}
+                    <div className="bg-white rounded-lg p-4 border border-teal-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">6️⃣ Team & Execution Capability</h5>
+                        <span className="bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold">10%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Team composition, relevant experience, ability to execute and iterate.
+                      </p>
+                    </div>
+
+                    {/* Criterion 7 */}
+                    <div className="bg-white rounded-lg p-4 border border-rose-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-bold text-gray-900">7️⃣ Ethics, Equity & Sustainability</h5>
+                        <span className="bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-bold">5%</span>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Consideration of ethics, data privacy, regulatory readiness, and environmental/social sustainability.
+                      </p>
+                    </div>
+
+                    {/* Total */}
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-4 border-2 border-indigo-700 text-white">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-bold">Total Weightage</h5>
+                        <span className="bg-white text-indigo-600 px-4 py-1 rounded-full text-sm font-bold">100%</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Problem Significance */}
@@ -450,11 +550,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.problemSignificance === score}
                           onChange={() => formik.setFieldValue('problemSignificance', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.problemSignificance === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -483,11 +582,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.innovationTechnical === score}
                           onChange={() => formik.setFieldValue('innovationTechnical', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.innovationTechnical === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -513,11 +611,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.marketScalability === score}
                           onChange={() => formik.setFieldValue('marketScalability', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.marketScalability === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -543,11 +640,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.tractionImpact === score}
                           onChange={() => formik.setFieldValue('tractionImpact', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.tractionImpact === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -573,11 +669,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.businessModel === score}
                           onChange={() => formik.setFieldValue('businessModel', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.businessModel === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -603,11 +698,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.teamExecution === score}
                           onChange={() => formik.setFieldValue('teamExecution', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.teamExecution === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -633,11 +727,10 @@ const EvaluatorProjectDetail = () => {
                           value={score}
                           checked={formik.values.ethicsEquity === score}
                           onChange={() => formik.setFieldValue('ethicsEquity', score)}
-                          disabled={existingEvaluation}
                           className="sr-only peer"
                         />
                         <span className={`px-4 py-2 border-2 rounded-lg cursor-pointer transition-all font-semibold
-                          ${existingEvaluation ? 'cursor-not-allowed opacity-50' : 'hover:border-[#ab509d]'}
+                          hover:border-[#ab509d]
                           ${formik.values.ethicsEquity === score 
                             ? 'bg-[#ab509d] text-white border-[#ab509d]' 
                             : 'bg-white text-gray-700 border-gray-300'}`}
@@ -649,20 +742,23 @@ const EvaluatorProjectDetail = () => {
                   </div>
                 </div>
 
-                {/* Total Score Display */}
+                {/* Weighted Score Display */}
                 <div className="bg-[#ab509d] bg-opacity-10 border-2 border-[#ab509d] rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold text-gray-900">Total Score:</span>
+                    <span className="text-lg font-semibold text-gray-900">Weighted Score:</span>
                     <span className="text-3xl font-bold text-[#ab509d]">
-                      {Number(formik.values.problemSignificance) +
-                       Number(formik.values.innovationTechnical) +
-                       Number(formik.values.marketScalability) +
-                       Number(formik.values.tractionImpact) +
-                       Number(formik.values.businessModel) +
-                       Number(formik.values.teamExecution) +
-                       Number(formik.values.ethicsEquity)} / 70
+                      {(
+                        (Number(formik.values.problemSignificance) * 0.20) +
+                        (Number(formik.values.innovationTechnical) * 0.20) +
+                        (Number(formik.values.marketScalability) * 0.20) +
+                        (Number(formik.values.tractionImpact) * 0.15) +
+                        (Number(formik.values.businessModel) * 0.10) +
+                        (Number(formik.values.teamExecution) * 0.10) +
+                        (Number(formik.values.ethicsEquity) * 0.05)
+                      ).toFixed(2)} / 10.00
                     </span>
                   </div>
+                  <p className="text-xs text-gray-600 mt-2">Based on official criteria weights (20%, 20%, 20%, 15%, 10%, 10%, 5%)</p>
                 </div>
               </div>
 
@@ -681,8 +777,7 @@ const EvaluatorProjectDetail = () => {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.strengths}
-                    disabled={existingEvaluation}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
                     placeholder="What are the project's main strengths and competitive advantages?..."
                   />
                   {formik.touched.strengths && formik.errors.strengths && (
@@ -701,8 +796,7 @@ const EvaluatorProjectDetail = () => {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.weaknesses}
-                    disabled={existingEvaluation}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
                     placeholder="What are the main weaknesses or risks that need to be addressed?..."
                   />
                   {formik.touched.weaknesses && formik.errors.weaknesses && (
@@ -721,8 +815,7 @@ const EvaluatorProjectDetail = () => {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.recommendation}
-                    disabled={existingEvaluation}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
                     placeholder="Your overall assessment and recommendation for this project..."
                   />
                   {formik.touched.recommendation && formik.errors.recommendation && (
@@ -731,36 +824,23 @@ const EvaluatorProjectDetail = () => {
                 </div>
               </div>
 
-              {!existingEvaluation && (
-                <div className="flex gap-4 pt-6 border-t border-gray-200">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-4 sm:px-6 py-2 sm:py-3 bg-[#ab509d] hover:bg-[#964a8a] text-white text-sm sm:text-base font-semibold rounded-lg shadow-md transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? 'Submitting...' : 'Submit Evaluation'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/evaluator/projects')}
-                    disabled={submitting}
-                    className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition duration-150 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-              {existingEvaluation && (
-                <div className="pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/evaluator/projects')}
-                    className="px-6 py-3 bg-[#ab509d] hover:bg-[#964a8a] text-white font-semibold rounded-lg transition duration-150"
-                  >
-                    ← Back to My Projects
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-4 pt-6 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-[#ab509d] hover:bg-[#964a8a] text-white text-sm sm:text-base font-semibold rounded-lg shadow-md transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (existingEvaluation ? 'Updating...' : 'Submitting...') : (existingEvaluation ? 'Update Evaluation' : 'Submit Evaluation')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/evaluator/projects')}
+                  disabled={submitting}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition duration-150 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           )}
         </div>

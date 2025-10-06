@@ -304,14 +304,17 @@ const AdminProjectDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {evaluations.map((evaluation) => {
-                    const totalScore = 
-                      evaluation.problemSignificance +
-                      evaluation.innovationTechnical +
-                      evaluation.marketScalability +
-                      evaluation.tractionImpact +
-                      evaluation.businessModel +
-                      evaluation.teamExecution +
-                      evaluation.ethicsEquity;
+                    // Calculate weighted score using official criteria weights
+                    // Problem(20%) + Innovation(20%) + Market(20%) + Traction(15%) + Business(10%) + Team(10%) + Ethics(5%)
+                    const weightedScore = (
+                      (evaluation.problemSignificance * 0.20) +
+                      (evaluation.innovationTechnical * 0.20) +
+                      (evaluation.marketScalability * 0.20) +
+                      (evaluation.tractionImpact * 0.15) +
+                      (evaluation.businessModel * 0.10) +
+                      (evaluation.teamExecution * 0.10) +
+                      (evaluation.ethicsEquity * 0.05)
+                    ).toFixed(2);
                     
                     return (
                       <div key={evaluation.evaluationId} className="border border-gray-200 rounded-lg p-6">
@@ -330,11 +333,12 @@ const AdminProjectDetail = () => {
                         
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Total Score</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Weighted Score</label>
                             <div className="flex items-center gap-2">
-                              <div className="text-2xl font-bold text-[#ab509d]">{totalScore}</div>
-                              <div className="text-sm text-gray-500">/ 70</div>
+                              <div className="text-2xl font-bold text-[#ab509d]">{weightedScore}</div>
+                              <div className="text-sm text-gray-500">/ 10.00</div>
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">Based on official criteria weights</p>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-3 text-sm">

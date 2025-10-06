@@ -19,9 +19,8 @@ const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   const getEvaluatorLinks = () => [
-    { to: '/evaluator/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/evaluator/projects', label: 'My Projects', icon: '📁' },
-    { to: '/evaluator/my-evaluations', label: 'My Evaluations', icon: '📝' }
+    { to: '/evaluator/dashboard', label: 'Home', icon: '🏠' },
+    { to: '/evaluator/projects', label: 'My Startups', icon: '�' }
   ];
 
   const getLinks = () => {

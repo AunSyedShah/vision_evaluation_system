@@ -69,9 +69,9 @@ const EvaluatorProjectList = () => {
     });
     
     if (hasEvaluated) {
-      return { text: 'Completed', color: 'bg-green-100 text-green-800' };
+      return { text: 'Evaluation Marked/Completed', color: 'bg-green-100 text-green-800' };
     }
-    return { text: 'Pending', color: 'bg-orange-100 text-orange-800' };
+    return { text: 'Evaluation Pending', color: 'bg-orange-100 text-orange-800' };
   };
 
   if (loading) {
@@ -96,8 +96,8 @@ const EvaluatorProjectList = () => {
       if (filterStatus === 'all') return matchesSearch;
       
       const status = getEvaluationStatus(project);
-      if (filterStatus === 'completed') return matchesSearch && status.text === 'Completed';
-      if (filterStatus === 'pending') return matchesSearch && status.text === 'Pending';
+      if (filterStatus === 'completed') return matchesSearch && status.text === 'Evaluation Marked/Completed';
+      if (filterStatus === 'pending') return matchesSearch && status.text === 'Evaluation Pending';
       
       return matchesSearch;
     })
@@ -122,9 +122,9 @@ const EvaluatorProjectList = () => {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Assigned Projects</h1>
-        <p className="text-gray-600">View and evaluate projects assigned to you</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">My Startups to Review</h1>
+        <p className="text-base text-gray-600">Click on any startup below to view details and submit your review</p>
       </div>
 
       {/* Filter and Search */}
@@ -134,46 +134,46 @@ const EvaluatorProjectList = () => {
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Projects
+                🔍 Search Startups
               </label>
               <input
                 type="text"
-                placeholder="Search by name or description..."
+                placeholder="Type startup name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+                className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
               />
             </div>
 
             {/* Filter by Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Status
+                📊 Filter by Status
               </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+                className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
               >
-                <option value="all">All Projects</option>
-                <option value="pending">Pending Evaluation</option>
-                <option value="completed">Completed</option>
+                <option value="all">All Startups</option>
+                <option value="pending">Not Yet Reviewed</option>
+                <option value="completed">Already Reviewed</option>
               </select>
             </div>
 
             {/* Sort By */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
+                ⬆️ Sort By
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
+                className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ab509d] focus:border-transparent outline-none"
               >
-                <option value="date">Start Date (Newest)</option>
-                <option value="name">Project Name (A-Z)</option>
-                <option value="status">Status</option>
+                <option value="date">Newest First</option>
+                <option value="name">Startup Name (A-Z)</option>
+                <option value="status">Review Status</option>
               </select>
             </div>
           </div>
@@ -189,14 +189,14 @@ const EvaluatorProjectList = () => {
 
       {filteredAndSortedProjects.length === 0 ? (
         <div className="bg-white rounded-xl shadow-md p-12 text-center">
-          <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {projects.length === 0 ? 'No Projects Assigned' : 'No Projects Found'}
+          <div className="text-5xl mb-4">📁</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">
+            {projects.length === 0 ? 'No Startups Assigned Yet' : 'No Startups Found'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-base text-gray-600">
             {projects.length === 0 
-              ? "You don't have any projects assigned yet. Check back later!" 
-              : 'Try adjusting your search or filters'}
+              ? "You don't have any startups assigned yet. Check back later!" 
+              : 'Try adjusting your search or filters to find startups'}
           </p>
         </div>
       ) : (
@@ -216,11 +216,11 @@ const EvaluatorProjectList = () => {
             }
             
             return (
-              <div key={projectId || `project-${Math.random()}`} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-200">
+              <div key={projectId || `project-${Math.random()}`} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-200 border border-gray-200">
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">{startupName}</h3>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-bold text-gray-900 flex-1 pr-2">{startupName}</h3>
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${status.color}`}>
                       {status.text}
                     </span>
                   </div>
@@ -244,9 +244,9 @@ const EvaluatorProjectList = () => {
                   
                   <Link
                     to={`/evaluator/projects/${projectId}`}
-                    className="block w-full text-center px-4 py-2 bg-[#ab509d] hover:bg-[#964a8a] text-white font-medium rounded-lg transition duration-150"
+                    className="block w-full text-center px-4 py-2 bg-[#ab509d] hover:bg-[#964a8a] text-white text-sm font-semibold rounded-lg transition duration-150"
                   >
-                    {status.text === 'Completed' ? 'View Evaluation' : 'Evaluate Project'}
+                    {status.text === 'Evaluation Marked/Completed' ? 'View Evaluation' : 'Evaluate Project'}
                   </Link>
                 </div>
               </div>

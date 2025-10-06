@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getAllProjects, deleteProject as apiDeleteProject, getEvaluationsByProject } from '../../utils/api';
+import { getAllProjects, deleteProject as apiDeleteProject, getEvaluationsByProject, getAssignedUsers } from '../../utils/api';
 import AssignEvaluatorsModal from '../../components/AssignEvaluatorsModal';
 
 const ProjectList = () => {
@@ -12,6 +12,7 @@ const ProjectList = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [evaluationsMap, setEvaluationsMap] = useState({}); // Store evaluation counts per project
+  const [assignedEvaluatorsMap, setAssignedEvaluatorsMap] = useState({}); // Store assigned evaluators count per project
 
   useEffect(() => {
     loadProjects();
@@ -38,8 +39,9 @@ const ProjectList = () => {
       console.log('📋 Projects Array:', projectsArray);
       setProjects(projectsArray);
       
-      // Load evaluation counts for each project
+      // Load evaluation counts and assigned evaluators for each project
       await loadEvaluationsCounts(projectsArray);
+      await loadAssignedEvaluatorsCounts(projectsArray);
     } catch (err) {
       console.error('❌ Failed to load projects:', err);
       setError(err.response?.data?.message || 'Failed to load projects. Please try again.');
@@ -80,6 +82,42 @@ const ProjectList = () => {
       setEvaluationsMap(countsMap);
     } catch (error) {
       console.error('❌ Failed to load evaluations counts:', error);
+    }
+  };
+
+  const loadAssignedEvaluatorsCounts = async (projectsList) => {
+    try {
+      const assignedMap = {};
+      
+      // Fetch assigned evaluators for each project
+      await Promise.all(
+        projectsList.map(async (project) => {
+          const projectId = project.Id || project.id;
+          if (projectId) {
+            try {
+              const response = await getAssignedUsers(projectId);
+              
+              // Extract assignedUsers array from response
+              let usersArray = response?.assignedUsers || response;
+              
+              // Handle $values wrapper
+              if (usersArray && usersArray.$values) {
+                usersArray = usersArray.$values;
+              }
+              
+              assignedMap[projectId] = Array.isArray(usersArray) ? usersArray.length : 0;
+            } catch (error) {
+              console.log(`ℹ️ No assigned evaluators for project ${projectId}`, error);
+              assignedMap[projectId] = 0;
+            }
+          }
+        })
+      );
+      
+      console.log('👥 Assigned evaluators map:', assignedMap);
+      setAssignedEvaluatorsMap(assignedMap);
+    } catch (error) {
+      console.error('❌ Failed to load assigned evaluators counts:', error);
     }
   };
 
@@ -203,7 +241,7 @@ const ProjectList = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Evaluation
+                  Progress
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -217,6 +255,7 @@ const ProjectList = () => {
                 const founderName = project.FounderName || project.founderName || 'N/A';
                 const description = project.StartupDescription || project.startupDescription || 'No description';
                 const status = project.StartupStatus || project.startupStatus || '';
+                const assignedCount = assignedEvaluatorsMap[projectId] || 0;
                 const evaluationCount = evaluationsMap[projectId] || 0;
 
                 // Get status badge color
@@ -257,27 +296,41 @@ const ProjectList = () => {
                   }
                 };
 
-                // Get evaluation badge
-                const getEvaluationBadge = () => {
-                  if (evaluationCount === 0) {
+                // Get progress badge (n/m format)
+                const getProgressBadge = () => {
+                  // No evaluators assigned
+                  if (assignedCount === 0) {
                     return (
-                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        ⏳ Pending
-                      </span>
-                    );
-                  } else if (evaluationCount === 1) {
-                    return (
-                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        📝 1 Evaluation
-                      </span>
-                    );
-                  } else {
-                    return (
-                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        ✅ {evaluationCount} Evaluations
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700">
+                        🚫 0/0 (No Evaluators)
                       </span>
                     );
                   }
+                  
+                  // All evaluations completed
+                  if (evaluationCount === assignedCount) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        ✅ {evaluationCount}/{assignedCount} (Complete)
+                      </span>
+                    );
+                  }
+                  
+                  // Some evaluations completed
+                  if (evaluationCount > 0) {
+                    return (
+                      <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        📝 {evaluationCount}/{assignedCount} (In Progress)
+                      </span>
+                    );
+                  }
+                  
+                  // No evaluations yet
+                  return (
+                    <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      ⏳ 0/{assignedCount} (Pending)
+                    </span>
+                  );
                 };
 
                 return (
@@ -293,7 +346,7 @@ const ProjectList = () => {
                       {getStatusBadge()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getEvaluationBadge()}
+                      {getProgressBadge()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <Link
