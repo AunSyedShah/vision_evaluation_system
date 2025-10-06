@@ -247,7 +247,7 @@ export const createProject = async (formData) => {
  * @returns {Promise} Updated project
  */
 export const updateProject = async (id, formData) => {
-  const response = await api.put(`/Projects/${id}`, formData, {
+  const response = await api.post(`/Projects/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -320,7 +320,7 @@ export const updateEvaluatorInternal = async (userId, evaluatorData) => {
   if (evaluatorData.company !== undefined) requestData.Company = evaluatorData.company || null;
   if (evaluatorData.password !== undefined && evaluatorData.password) requestData.Password = evaluatorData.password;
   
-  const response = await api.put(`/SuperAdmin/updateEvaluator/${userId}`, requestData);
+  const response = await api.post(`/SuperAdmin/updateEvaluator/${userId}`, requestData);
   return response.data;
 };
 
@@ -340,7 +340,7 @@ export const assignProjectToEvaluators = async (assignmentData) => {
  * @returns {Promise} Success message
  */
 export const updateProjectAssignment = async (assignmentData) => {
-  const response = await api.put('/SuperAdmin/updateAssignment', assignmentData);
+  const response = await api.post('/SuperAdmin/updateAssignment', assignmentData);
   return response.data;
 };
 
@@ -467,7 +467,7 @@ export const updateEvaluation = async (projectId, evaluationData) => {
     Recommendation: evaluationData.recommendation || ''
   };
   
-  const response = await api.put(`/Evaluations/${projectId}`, backendData);
+  const response = await api.post(`/Evaluations/${projectId}`, backendData);
   return response.data;
 };
 
